@@ -1,7 +1,8 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const { authenticateToken } = require('./utilities/auth'); // Import authenticate middleware from utilities/auth.js
+require('dotenv').config();
+// const { authenticateToken } = require('./utilities/auth'); // Import authenticate middleware from utilities/auth.js
 
 // Middleware
 app.use(cors());
@@ -9,7 +10,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Authentication middleware
-app.use(authenticateToken);
+// app.use(authenticateToken);
 
 // Routes
 const userRoutes = require('./routes/user');

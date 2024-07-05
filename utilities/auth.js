@@ -1,41 +1,48 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
+const { JWT_SECRET } = process.env; 
 
-const generateToken = (user) => {
-  return jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
-};
+function generateToken(user) {
+  console.assert(user.id !== undefined && user.username !== undefined, "createToken passed user without required properties");
 
+  let payload = {
+    id: user.id,
+    username: user.username,
+  };
 
-const authenticateToken = (req, res, next) => {
-  // Check if the route requires authentication (e.g., if it has a specific flag or is a certain path)
-  if (req.requireAuth) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (token == null) {
-      return res.status(401).json({ error: 'Authentication token not provided' });
-    }
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+}
 
-    jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
-      if (err) {
-        return res.status(403).json({ error: 'Invalid token' });
-      }
-      try {
-        const loggedInUser = await User.findByPk(user.id);
-        if (!loggedInUser) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-        req.user = loggedInUser;
-        next();
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    });
-  } else {
-    // If authentication is not required, proceed to the next middleware or route handler
-    next();
-  }
-};
+// const authenticateToken = (req, res, next) => {
+//   // Check if the route requires authentication (e.g., if it has a specific flag or is a certain path)
+//   if (req.requireAuth) {
+//     const authHeader = req.headers['authorization'];
+//     const token = authHeader && authHeader.split(' ')[1];
+//     if (token == null) {
+//       return res.status(401).json({ error: 'Authentication token not provided' });
+//     }
+
+//     jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+//       if (err) {
+//         return res.status(403).json({ error: 'Invalid token' });
+//       }
+//       try {
+//         const loggedInUser = await User.findByPk(user.id);
+//         if (!loggedInUser) {
+//           return res.status(404).json({ error: 'User not found' });
+//         }
+//         req.user = loggedInUser;
+//         next();
+//       } catch (error) {
+//         res.status(500).json({ error: error.message });
+//       }
+//     });
+//   } else {
+//     // If authentication is not required, proceed to the next middleware or route handler
+//     next();
+//   }
+// };
 
 const loginUser = async (req, res) => {
     const { username, password } = req.body;
@@ -121,7 +128,7 @@ const isTeamAdmin = async (req, res, next) => {
 
 module.exports = {
   generateToken,
-  authenticateToken,
+  // authenticateToken,
   loginUser,
   isTeamAdmin,
   // isLeagueAdmin

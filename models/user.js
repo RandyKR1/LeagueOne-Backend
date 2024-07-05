@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     bio: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
       allowNull: true,
     }
   }, {
