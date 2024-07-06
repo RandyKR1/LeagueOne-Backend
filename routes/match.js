@@ -1,11 +1,18 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 const { Match, League } = require('../models');
-const { authenticateToken, isLeagueAdmin } = require('../utilities/auth');
+const { validateSchema } = require('../middleware/validateSchema');
+
+const schemas = {
+  MatchNew: require('../schemas/MatchNew.json'),
+  MatchUpdate: require('../schemas/MatchUpdate.json'),
+  MatchSearch: require('../schemas/MatchSearch.json')
+};
 
 // Get all matches for a league
 router.get('/', async (req, res) => {
   try {
+    validateSchema(req.query, schemas.MatchSearch);
     const matches = await Match.findAllWithFilters(req.query);
     res.status(200).json(matches);
   } catch (error) {
@@ -21,6 +28,7 @@ router.post('/create', async (req, res) => {
   const userId = req.user.id;
 
   try {
+    validateSchema(req.body, schemas.MatchNew);
     const league = await League.findByPk(leagueId);
     if (!league) {
       return res.status(404).json({ error: 'League not found' });
@@ -47,6 +55,7 @@ router.put('/:matchId', async (req, res) => {
   const { leagueId, matchId } = req.params;
 
   try {
+    validateSchema(req.body, schemas.MatchUpdate);
     const match = await Match.findOne({ where: { id: matchId, leagueId } });
     if (!match) {
       return res.status(404).json({ error: 'Match not found' });

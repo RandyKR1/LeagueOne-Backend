@@ -1,11 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const { League, User, Team } = require('../models');
-const { authenticateToken, isLeagueAdmin, isTeamAdmin } = require('../utilities/auth');
+const { validateSchema } = require('../middleware/validateSchema');
+
+
+const schemas = {
+  LeagueNew: require('../schemas/LeagueNew.json'),
+  LeagueUpdate: require('../schemas/LeagueUpdate.json'),
+  LeagueSearch: require('../schemas/LeagueSearch.json')
+};
 
 // Get all leagues
 router.get('/', async (req, res) => {
   try {
+    validateSchema(req.query, schemas.LeagueSearch);
     const leagues = await League.findAllWithFilters(req.query);
     res.status(200).json(leagues);
   } catch (error) {
@@ -16,6 +24,7 @@ router.get('/', async (req, res) => {
 // Get league by ID
 router.get('/:id', async (req, res) => {
   try {
+    validateSchema(req.query, schemas.LeagueSearch);
     const league = await League.findByPk(req.params.id, {
       include: [{ model: Team, as: 'teams' }, { model: User, as: 'members' }]
     });
@@ -32,6 +41,7 @@ router.get('/:id', async (req, res) => {
 // Create a league
 router.post('/create', async (req, res) => {
   try {
+    validateSchema(req.body, schemas.LeagueNew)
     const { name, password, maxTeams, description } = req.body;
     // const loggedInUser = req.user;
 
@@ -96,6 +106,7 @@ router.post('/:leagueId/join', async (req, res) => {
 // Update a league
 router.put('/:id', async (req, res) => {
   try {
+    validateSchema(req.body, schemas.LeagueUpdate)
     const league = await League.findByPk(req.params.id);
     if (!league) {
       return res.status(404).json({ error: 'League not found' });

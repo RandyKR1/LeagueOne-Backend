@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://our.app.com/userNew.schema.json",
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "lastName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 30
+    },
+    "password": {
+      "type": "string",
+      "minLength": 6
+    },
+    "bio": {
+      "type": "string",
+      "maxLength": 255
+    }
+  },
+  "required": ["firstName", "lastName", "email", "username", "password"],
+  "additionalProperties": false
+}

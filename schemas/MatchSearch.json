@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://our.match.com/matchSearch.schema.json",
+    "type": "object",
+    "properties": {
+      "date": {
+        "type": "string",
+        "format": "date"
+      },
+      "teamId": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "leagueId": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "additionalProperties": false,
+    "required": []
+  }
+  

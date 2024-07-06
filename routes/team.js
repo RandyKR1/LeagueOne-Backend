@@ -1,11 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const { Team, User } = require('../models');
-const { authenticateToken, isTeamAdmin } = require('../utilities/auth'); // Import authenticateToken and isTeamAdmin from auth.js
+const { Team } = require('../models');
+const { validateSchema } = require('../middleware/validateSchema');
+
+const schemas = {
+  TeamNew: require('../schemas/TeamNew.json'),
+  TeamUpdate: require('../schemas/TeamUpdate.json'),
+  TeamSearch: require('../schemas/TeamSearch.json')
+};
 
 // Get all teams
 router.get('/', async (req, res) => {
   try {
+    validateSchema(req.query, schemas.TeamSearch);
     const teams = await Team.findAllWithFilters(req.query);
     res.status(200).json(teams);
   } catch (error) {
@@ -16,6 +23,7 @@ router.get('/', async (req, res) => {
 // Get team by ID
 router.get('/:id', async (req, res) => {
   try {
+    validateSchema(req.query, schemas.TeamSearch);
     const team = await Team.findByPk(req.params.id);
     if (team) {
       res.status(200).json(team);
@@ -30,6 +38,7 @@ router.get('/:id', async (req, res) => {
 // Create a team
 router.post('/create', async (req, res) => {
   try {
+    validateSchema(req.body, schemas.TeamNew)
     const { name, password, maxPlayers, league } = req.body;
     
     // Find the logged-in user
@@ -81,6 +90,7 @@ router.post('/:teamId/join', async (req, res) => {
 // Update a team
 router.put('/:id', async (req, res) => {
   try {
+    validateSchema(req.body, schemas.TeamUpdate);
     const team = req.team; // Access team object attached by isTeamAdmin middleware
 
     // Update the team (assuming req.body contains updated fields)

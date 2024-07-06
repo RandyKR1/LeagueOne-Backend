@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://our.team.com/teamUpdate.schema.json",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "password": {
+        "type": "string",
+        "minLength": 1
+      },
+      "maxPlayers": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "leagueId": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "additionalProperties": false,
+    "required": []
+  }
+  

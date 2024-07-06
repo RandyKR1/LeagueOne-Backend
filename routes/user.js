@@ -1,15 +1,22 @@
 const express = require("express");
 const router = express.Router();
 const { User } = require('../models');
-const { authenticateToken } = require('../utilities/auth'); // Import authenticateToken from auth.js
+const { validateSchema } = require('../middleware/validateSchema');
+
+const schemas = {
+    UserNew: require('../schemas/UserNew.json'),
+    UserUpdate: require('../schemas/UserUpdate.json'),
+    UserSearch: require('../schemas/UserSearch.json')
+};
 
 // Get all users (authentication not required)
 router.get('/', async (req, res) => {
     try {
-      const users = await User.findAllWithFilters(req.query);
-      res.status(200).json(users);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
+        validateSchema(req.query, schemas.UserSearch);
+        const users = await User.findAllWithFilters(req.query);
+        res.status(200).json(users);
+    }catch (error) {
+        res.status(400).json({ error: error.message });
     }
   });
   
@@ -17,6 +24,7 @@ router.get('/', async (req, res) => {
 // Get user by username (authentication not required)
 router.get('/:username', async (req, res) => {
     try {
+        validateSchema(req.query, schemas.UserSearch);
         const user = await User.findOne({
             where: { username: req.params.username }
         });
@@ -33,6 +41,7 @@ router.get('/:username', async (req, res) => {
 // Create a user (authentication not required)
 router.post('/create', async (req, res) => {
     try {
+        validateSchema(req.body, schemas.UserNew);
         const user = await User.create({
             firstName: req.body.firstName,
             lastName: req.body.lastName,
@@ -50,6 +59,7 @@ router.post('/create', async (req, res) => {
 // Update a user (authentication required)
 router.put('/:username', async (req, res) => {
     try {
+        validateSchema(req.body, schemas.UserUpdate)
         const user = await User.findOne({ where: { username: req.params.username } });
         if (user) {
             await user.update(req.body);

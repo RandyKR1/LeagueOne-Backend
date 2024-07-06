@@ -1,17 +1,17 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "http://LeagueOne.com/userNew.schema.json",
+    "$id": "http://our.app.com/userUpdate.schema.json",
     "type": "object",
     "properties": {
       "firstName": {
         "type": "string",
         "minLength": 1,
-        "maxLength": 50
+        "maxLength": 100
       },
       "lastName": {
         "type": "string",
         "minLength": 1,
-        "maxLength": 50
+        "maxLength": 100
       },
       "email": {
         "type": "string",
@@ -19,7 +19,7 @@
       },
       "username": {
         "type": "string",
-        "minLength": 1,
+        "minLength": 3,
         "maxLength": 30
       },
       "password": {
@@ -27,10 +27,11 @@
         "minLength": 6
       },
       "bio": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 255
       }
     },
     "additionalProperties": false,
-    "required": ["firstName", "lastName", "email", "username", "password"]
+    "required": []
   }
   
