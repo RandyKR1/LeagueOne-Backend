@@ -1,4 +1,3 @@
-// MatchLeague.js
 module.exports = (sequelize, DataTypes) => {
     const MatchLeague = sequelize.define('MatchLeague', {
       id: {

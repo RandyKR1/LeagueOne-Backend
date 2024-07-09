@@ -1,4 +1,3 @@
-// UserLeagueRole.js
 module.exports = (sequelize, DataTypes) => {
     const UserLeagueRole = sequelize.define('UserLeagueRole', {
       id: {

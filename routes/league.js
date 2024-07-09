@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { League, User, Team } = require('../models');
+const { League, User, Team, Match } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 
 
@@ -26,7 +26,11 @@ router.get('/:id', async (req, res) => {
   try {
     validateSchema(req.query, schemas.LeagueSearch);
     const league = await League.findByPk(req.params.id, {
-      include: [{ model: Team, as: 'teams' }, { model: User, as: 'members' }]
+      include: [
+        { model: Team, as: 'teams' }, 
+        { model: User, as: 'members' },
+        { model: Match, as: 'matches'}
+    ]
     });
     if (league) {
       res.status(200).json(league);

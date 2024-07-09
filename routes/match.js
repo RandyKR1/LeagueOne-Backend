@@ -9,16 +9,20 @@ const schemas = {
   MatchSearch: require('../schemas/MatchSearch.json')
 };
 
+// routes/match.js
+
 // Get all matches for a league
 router.get('/', async (req, res) => {
-  try {
-    validateSchema(req.query, schemas.MatchSearch);
-    const matches = await Match.findAllWithFilters(req.query);
-    res.status(200).json(matches);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+  try{
+  const { leagueId } = req.params;
+  const matches = await Match.findAllWithFilters({ ...req.query, leagueId: parseInt(leagueId) });
+  res.status(200).json(matches);
+  }catch(e){
+    return res.status(404).json({ error: e.message });
   }
 });
+
+
 
 
 // Create a new match

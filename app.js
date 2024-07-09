@@ -26,7 +26,7 @@ app.use('/leagues', leagueRoutes);
 app.use('/leagues/:leagueId/matches', matchRoutes);
 app.use('/auth', authRoutes); // Mount auth routes under /auth endpoint
 
-
+        
 
 
 /** Handle 404 errors -- this matches everything */

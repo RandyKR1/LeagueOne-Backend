@@ -3,7 +3,7 @@ const path = require('path');
 const Sequelize = require('sequelize');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
+const config = require(__dirname + '/../config/config.js')[env];
 const db = {};
 
 let sequelize;
@@ -31,14 +31,14 @@ Object.keys(db).forEach(modelName => {
 });
 
 // Synchronize all models with the database
-(async () => {
-  try {
-    await sequelize.sync({ force: true }); // Use { force: true } in development to drop and re-create tables. Remove to save data.
-    console.log('Database synchronized');
-  } catch (error) {
-    console.error('Unable to synchronize database:', error);
-  }
-})();
+// (async () => {
+//   try {
+//     await sequelize.sync({ force: true }); // Use { force: true } in development to drop and re-create tables. Remove to save data.
+//     console.log('Database synchronized');
+//   } catch (error) {
+//     console.error('Unable to synchronize database:', error);
+//   }
+// })();
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;

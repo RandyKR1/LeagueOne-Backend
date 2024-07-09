@@ -1,4 +1,3 @@
-// TeamPlayers.js
 module.exports = (sequelize, DataTypes) => {
     const TeamPlayers = sequelize.define('TeamPlayers', {
       id: {
