@@ -66,7 +66,7 @@ router.post('/create', async (req, res) => {
 
     res.status(201).json(league);
   } catch (error) {
-    res.status(400).json({ error: error.message, loggedInUser });
+    res.status(400).json({ error: error.message});
   }
 });
 

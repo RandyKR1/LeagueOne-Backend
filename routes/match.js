@@ -23,39 +23,58 @@ router.get('/', async (req, res) => {
 });
 
 
+router.get('/:matchId', async (req, res) => {
+  try {
+    const { leagueId, matchId } = req.params;
+    const match = await Match.findOne({
+      where: {
+        id: parseInt(matchId),
+        leagueId: parseInt(leagueId)
+      }
+    });
+    if (!match) {
+      return res.status(404).json({ error: 'Match not found' });
+    }
+    res.status(200).json(match);
+  } catch (e) {
+    return res.status(404).json({ error: e.message });
+  }
+});
+
+
 
 
 // Create a new match
 router.post('/create', async (req, res) => {
-  const { leagueId } = req.params;
-  const { eventName, eventLocation, eventParticipants, eventType, eventResults } = req.body;
-  const userId = req.user.id;
-
   try {
-    validateSchema(req.body, schemas.MatchNew);
-    const league = await League.findByPk(leagueId);
-    if (!league) {
-      return res.status(404).json({ error: 'League not found' });
-    }
+      const { leagueId } = req.params;
+      console.log("Received leagueId:", leagueId);
+      const { eventName, eventLocation, eventType, eventResults, creatorId } = req.body;
+      console.log("Received data:", req.body);
 
-    const match = await Match.create({
-      leagueId,
-      eventName,
-      eventLocation,
-      eventParticipants,
-      eventType,
-      eventResults,
-      creatorId: userId,
-    });
+      if (!leagueId || !eventName || !eventLocation || !eventType || !creatorId) {
+          return res.status(400).json({ error: "Missing required fields" });
+      }
 
-    res.status(201).json(match);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+      const newMatch = await Match.create({
+          leagueId: parseInt(leagueId, 10),
+          eventName,
+          eventLocation,
+          eventType,
+          eventResults,
+          creatorId: parseInt(creatorId, 10)
+      });
+
+      return res.status(201).json(newMatch);
+  } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Server error" });
   }
 });
 
+
 // Update a match
-router.put('/:matchId', async (req, res) => {
+router.put('/:matchId/update', async (req, res) => {
   const { leagueId, matchId } = req.params;
 
   try {
