@@ -42,8 +42,6 @@ router.get('/:matchId', async (req, res) => {
 });
 
 
-
-
 // Create a new match
 router.post('/create', async (req, res) => {
   try {
@@ -72,22 +70,39 @@ router.post('/create', async (req, res) => {
   }
 });
 
-
-// Update a match
-router.put('/:matchId/update', async (req, res) => {
+// Update match
+router.put('/:matchId', async (req, res) => {
   const { leagueId, matchId } = req.params;
+  const { eventName, eventLocation, eventType, eventResults, creatorId } = req.body;
 
   try {
-    validateSchema(req.body, schemas.MatchUpdate);
-    const match = await Match.findOne({ where: { id: matchId, leagueId } });
+    // Find the match by leagueId and matchId
+    const match = await Match.findOne({
+      where: {
+        id: matchId,
+        leagueId: leagueId,
+      },
+    });
+
     if (!match) {
       return res.status(404).json({ error: 'Match not found' });
     }
 
-    await match.update(req.body);
-    res.status(200).json(match);
+    // Update match attributes
+    match.eventName = eventName;
+    match.eventLocation = eventLocation;
+    match.eventType = eventType;
+    match.eventResults = eventResults;
+    match.creatorId = creatorId;
+
+    // Save the updated match
+    await match.save();
+
+    // Respond with updated match data
+    return res.json(match);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error updating match:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

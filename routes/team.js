@@ -42,7 +42,7 @@ router.post('/create', async (req, res) => {
     const { name, password, maxPlayers, league } = req.body;
     
     // Find the logged-in user
-    const loggedInUser = req.user;
+    // const loggedInUser = req.user;
 
     // Create the team
     const team = await Team.create({
@@ -50,11 +50,11 @@ router.post('/create', async (req, res) => {
       password,
       maxPlayers,
       league,
-      adminId: loggedInUser.id
+      // adminId: loggedInUser.id
     });
 
     // Add admin as a player in the team
-    await team.addPlayer(loggedInUser);
+    // await team.addPlayer(loggedInUser);
 
     res.status(201).json(team);
   } catch (error) {
@@ -89,18 +89,30 @@ router.post('/:teamId/join', async (req, res) => {
 
 // Update a team
 router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  
   try {
+    // Validate request body against TeamUpdate schema
     validateSchema(req.body, schemas.TeamUpdate);
-    const team = req.team; // Access team object attached by isTeamAdmin middleware
 
-    // Update the team (assuming req.body contains updated fields)
+    // Fetch the team from the database
+    const team = await Team.findByPk(id);
+
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    // Update the team with the data from req.body
     await team.update(req.body);
 
+    // Return updated team in the response
     res.status(200).json(team);
   } catch (error) {
+    // Handle validation errors or database errors
     res.status(400).json({ error: error.message });
   }
 });
+
 
 // Delete a team
 router.delete('/:id', async (req, res) => {
@@ -111,6 +123,32 @@ router.delete('/:id', async (req, res) => {
     await team.destroy();
 
     res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get all matches of a specific team
+router.get('/:teamId/matches', async (req, res) => {
+  const { teamId } = req.params;
+
+  try {
+    const team = await Team.findByPk(teamId, {
+      include: [
+        {
+          model: Match,
+          as: 'matches', // This should match the association name in Team model
+          through: { attributes: [] } // Exclude any additional attributes from the join table
+        }
+      ]
+    });
+
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    const matches = team.matches;
+    res.status(200).json(matches);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
