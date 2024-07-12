@@ -1,130 +1,111 @@
-"use strict";
+const jwt = require('jsonwebtoken');
+const { User, League, Team } = require('../models');
 
-/** Convenience middleware to handle common auth cases in routes. */
-
-const jwt = require("jsonwebtoken");
-const { UnauthorizedError, BadRequestError } = require("../expressError");
-const jsonschema = require("jsonschema");
-const { User } = require('../models');
-const bcrypt = require('bcrypt');
-const { JWT_SECRET } = process.env; 
-
-
-function generateToken(user) {
-    console.assert(user.id !== undefined && user.username !== undefined, "createToken passed user without required properties");
-  
-    let payload = {
-      id: user.id,
-      username: user.username,
-    };
-  
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
-  }
-
-
-/** Middleware: Authenticate user.
- *
- * If a token was provided, verify it, and, if valid, store the token payload
- * on res.locals (this will include the username and isAdmin field.)
- *
- * It's not an error if no token was provided or if the token is not valid.
+/**
+ * Middleware to authenticate JWT tokens
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
  */
-
 function authenticateJWT(req, res, next) {
-  try {
-    const authHeader = req.headers && req.headers.authorization;
-    if (authHeader) {
-      const token = authHeader.replace(/^[Bb]earer /, "").trim();
-      res.locals.user = jwt.verify(token, JWT_SECRET);
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ error: 'Invalid token' });
     }
-    return next();
-  } catch (err) {
-    return next();
-  }
+
+    req.user = decoded;
+    next();
+  });
 }
 
-  // const isLeagueAdmin = async (req, res, next) => {
-//     const leagueId = req.params.id || req.body.leagueId;
-//     const userId = req.user.id;
-  
-//     try {
-//       const league = await League.findByPk(leagueId);
-//       if (league && league.adminId === userId) {
-//         return next();
-//       } else {
-//         return res.status(403).json({ error: 'User is not the league admin' });
-//       }
-//     } catch (error) {
-//       return res.status(400).json({ error: error.message });
-//     }
-//   };
-
-// const isLeagueMember = async (req, res, next) => {
-//     const leagueId = req.params.leagueId || req.body.leagueId;
-//     const userId = req.user.id;
-
-//     try {
-//         const league = await League.findByPk(leagueId, {
-//             include: {
-//                 model: User,
-//                 as: 'members',
-//                 through: { where: { userId } },
-//             },
-//         });
-
-//         if (league && league.members.length > 0) {
-//             return next();
-//         } else {
-//             return res.status(403).json({ error: 'User is not a member of the league' });
-//         }
-//     } catch (error) {
-//         return res.status(400).json({ error: error.message });
-//     }
-// };
-
-
-// const isTeamAdmin = async (req, res, next) => {
-//     const teamId = req.params.teamId || req.body.teamId;
-//     const userId = req.user.id;
-
-//     try {
-//         const team = await Team.findByPk(teamId);
-//         if (team && team.adminId === userId) {
-//             return next();
-//         } else {
-//             return res.status(403).json({ error: 'User is not the team admin' });
-//         }
-//     } catch (error) {
-//         return res.status(400).json({ error: error.message });
-//     }
-// };
-
-/** Middleware to use when they must be logged in.
- *
- * If not, raises Unauthorized.
+/**
+ * Middleware to ensure the user is logged in
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
  */
-
 function ensureLoggedIn(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized: You must be logged in' });
+  }
+  next();
+}
+
+/**
+ * Middleware to ensure the user is a league admin
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+async function isLeagueAdmin(req, res, next) {
+  const { user, params } = req;
+  const leagueId = params.leagueId || params.id;
   try {
-    if (!res.locals.user) throw new UnauthorizedError();
-    return next();
-  } catch (err) {
-    return next(err);
+    const league = await League.findByPk(leagueId);
+    if (league && league.adminId === user.id) {
+      return next();
+    } else {
+      return res.status(403).json({ error: 'Forbidden: You must be a league admin' });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-function schemaValidation(data, schema){
-  const validator = jsonschema.validate(data, schema);
-  if(!validator.valid){
-    const errs = validator.errors.map(e => e.stack)
-    throw new BadRequestError(errs)
+/**
+ * Middleware to ensure the user is a team admin
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+async function isTeamAdmin(req, res, next) {
+  const { user, params } = req;
+  const teamId = params.teamId || params.id;
+  try {
+    const team = await Team.findByPk(teamId);
+    if (team && team.adminId === user.id) {
+      return next();
+    } else {
+      return res.status(403).json({ error: 'Forbidden: You must be a team admin' });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
+/**
+ * Middleware to ensure the user is a league member
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+async function isLeagueMember(req, res, next) {
+  const { user, params } = req;
+  const leagueId = params.leagueId || params.id;
+  try {
+    const league = await League.findByPk(leagueId, {
+      include: [{ model: User, as: 'members', where: { id: user.id } }]
+    });
+    if (league) {
+      return next();
+    } else {
+      return res.status(403).json({ error: 'Forbidden: You must be a league member' });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
 
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
-  schemaValidation,
-  generateToken,
+  isLeagueAdmin,
+  isTeamAdmin,
+  isLeagueMember
 };

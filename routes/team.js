@@ -1,29 +1,35 @@
-const express = require("express");
-const router = express.Router();
-const { Team } = require('../models');
+const express = require('express');
+const router = express.Router({ mergeParams: true });
+const { Team, Player, Match } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
+const { authenticateJWT, ensureLoggedIn, isTeamAdmin } = require('../middleware/auth');
 
 const schemas = {
   TeamNew: require('../schemas/TeamNew.json'),
-  TeamUpdate: require('../schemas/TeamUpdate.json'),
-  TeamSearch: require('../schemas/TeamSearch.json')
+  TeamUpdate: require('../schemas/TeamUpdate.json')
 };
 
-// Get all teams
-router.get('/', async (req, res) => {
+/**
+ * @route GET /teams
+ * @description Get all teams
+ * @access Private
+ */
+router.get('/', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
-    validateSchema(req.query, schemas.TeamSearch);
-    const teams = await Team.findAllWithFilters(req.query);
+    const teams = await Team.findAll();
     res.status(200).json(teams);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// Get team by ID
-router.get('/:id', async (req, res) => {
+/**
+ * @route GET /teams/:id
+ * @description Get a team by ID
+ * @access Private
+ */
+router.get('/:id', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
-    validateSchema(req.query, schemas.TeamSearch);
     const team = await Team.findByPk(req.params.id);
     if (team) {
       res.status(200).json(team);
@@ -35,120 +41,112 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create a team
-router.post('/create', async (req, res) => {
+/**
+ * @route POST /teams/create
+ * @description Create a new team
+ * @access Private
+ */
+router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
-    validateSchema(req.body, schemas.TeamNew)
-    const { name, password, maxPlayers, league } = req.body;
-    
-    // Find the logged-in user
-    // const loggedInUser = req.user;
-
-    // Create the team
-    const team = await Team.create({
-      name,
-      password,
-      maxPlayers,
-      league,
-      // adminId: loggedInUser.id
-    });
-
-    // Add admin as a player in the team
-    // await team.addPlayer(loggedInUser);
-
+    validateSchema(req.body, schemas.TeamNew);
+    const team = await Team.create(req.body);
     res.status(201).json(team);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// User joins a team
-router.post('/:teamId/join', async (req, res) => {
-    const { teamId } = req.params;
-    const { password } = req.body;
-    const userId = req.user.id;
-  
-    try {
-      const team = await Team.findByPk(teamId);
-      if (!team) {
-        return res.status(404).json({ error: 'Team not found' });
-      }
-  
-      // Validate team password
-      if (!team.validPassword(password)) {
-        return res.status(401).json({ error: 'Incorrect password' });
-      }
-  
-      // Add user to team's players
-      await team.addPlayer(userId);
-      res.status(200).json({ message: 'User joined the team successfully' });
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  });
+/**
+ * @route POST /teams/:id/join
+ * @description Join a team
+ * @access Private
+ */
+router.post('/:id/join', authenticateJWT, ensureLoggedIn, async (req, res) => {
+  const { id: teamId } = req.params;
+  const { password } = req.body;
+  const userId = req.user.id;
 
-// Update a team
-router.put('/:id', async (req, res) => {
-  const { id } = req.params;
-  
   try {
-    // Validate request body against TeamUpdate schema
-    validateSchema(req.body, schemas.TeamUpdate);
-
-    // Fetch the team from the database
-    const team = await Team.findByPk(id);
-
+    const team = await Team.findByPk(teamId);
     if (!team) {
       return res.status(404).json({ error: 'Team not found' });
     }
 
-    // Update the team with the data from req.body
-    await team.update(req.body);
+    // Validate team password
+    if (!team.validPassword(password)) {
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
 
-    // Return updated team in the response
-    res.status(200).json(team);
+    // Check if the user is already part of the team
+    const isMember = await team.hasPlayer(userId);
+    if (isMember) {
+      return res.status(400).json({ error: 'User is already part of the team' });
+    }
+
+    // Add user to the team
+    await team.addPlayer(userId);
+    res.status(200).json({ message: 'User joined the team successfully' });
   } catch (error) {
-    // Handle validation errors or database errors
     res.status(400).json({ error: error.message });
   }
 });
 
-
-// Delete a team
-router.delete('/:id', async (req, res) => {
+/**
+ * @route PUT /teams/:id
+ * @description Update a team
+ * @access Private
+ */
+router.put('/:id', authenticateJWT, ensureLoggedIn, isTeamAdmin, async (req, res) => {
   try {
-    const team = req.team; // Access team object attached by isTeamAdmin middleware
+    validateSchema(req.body, schemas.TeamUpdate);
+    const team = await Team.findByPk(req.params.id);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
 
-    // Delete the team
+    await team.update(req.body);
+    res.status(200).json(team);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @route DELETE /teams/:id
+ * @description Delete a team
+ * @access Private
+ */
+router.delete('/:id', authenticateJWT, ensureLoggedIn, isTeamAdmin, async (req, res) => {
+  try {
+    const team = await Team.findByPk(req.params.id);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
     await team.destroy();
-
     res.status(204).send();
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// Get all matches of a specific team
-router.get('/:teamId/matches', async (req, res) => {
+/**
+ * @route GET /teams/:teamId/matches
+ * @description Get all matches for a team
+ * @access Private
+ */
+router.get('/:teamId/matches', authenticateJWT, ensureLoggedIn, async (req, res) => {
   const { teamId } = req.params;
-
   try {
     const team = await Team.findByPk(teamId, {
-      include: [
-        {
-          model: Match,
-          as: 'matches', // This should match the association name in Team model
-          through: { attributes: [] } // Exclude any additional attributes from the join table
-        }
-      ]
+      include: [{ model: Match, as: 'matches' }]
     });
 
-    if (!team) {
-      return res.status(404).json({ error: 'Team not found' });
+    if (team) {
+      res.status(200).json(team.matches);
+    } else {
+      res.status(404).json({ error: 'Team not found' });
     }
-
-    const matches = team.matches;
-    res.status(200).json(matches);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

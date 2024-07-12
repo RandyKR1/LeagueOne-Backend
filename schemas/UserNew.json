@@ -14,8 +14,7 @@
       "maxLength": 100
     },
     "email": {
-      "type": "string",
-      "format": "email"
+      "type": "string"
     },
     "username": {
       "type": "string",

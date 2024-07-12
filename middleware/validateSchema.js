@@ -1,5 +1,3 @@
-// utils/validateSchema.js
-
 const Ajv = require('ajv').default;
 const ajv = new Ajv({ allErrors: true });
 
