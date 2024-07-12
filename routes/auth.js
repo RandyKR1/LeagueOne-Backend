@@ -2,57 +2,59 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { User } = require('../models');
-const { validateSchema } = require('../middleware/validateSchema');
-const {BadRequestError} = require('../expressError')
-const {createToken} = require('../helpers/tokens')
-
-
-const schemas = {
-  UserRegister: require('../schemas/UserRegister.json'),
-  UserAuth: require('../schemas/UserAuth.json'),
-};
+const { BadRequestError, UnauthorizedError } = require('../expressError');
+const { createToken } = require('../helpers/tokens');
 
 /**
  * @route POST /auth/register
  * @description Register a new user
  * @access Public
  */
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res, next) => {
   try {
-    // Validate request body against UserRegister schema
-    validateSchema(req.body, schemas.UserRegister);
+    const { username, password, firstName, lastName, email, isAdmin } = req.body;
+    
+    // Check if username already exists
+    const existingUser = await User.findOne({ where: { username } });
+    if (existingUser) {
+      throw new BadRequestError(`Duplicate username: ${username}`);
+    }
 
-    const { firstName, lastName, email, username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
-    const user = await User.create({ firstName, lastName, email, username, password: hashedPassword });
-    res.status(201).json(user);
+    const newUser = await User.create({ username, password, firstName, lastName, email, isAdmin });
+    res.status(201).json(newUser);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    next(error); // Pass error to error handler middleware
   }
 });
 
-
-/** POST /auth/token:  { username, password } => { token }
- *
- * Returns JWT token which can be used to authenticate further requests.
- *
- * Authorization required: none
+/**
+ * @route POST /auth/token
+ * @description Authenticate a user and return a JWT token
+ * @access Public
  */
-
-router.post("/token", async function (req, res, next) {
+router.post('/token', async (req, res, next) => {
   try {
-    const validator = jsonschema.validate(req.body, schemas.UserAuth);
-    if (!validator.valid) {
-      const errs = validator.errors.map(e => e.stack);
-      throw new BadRequestError(errs);
+    const { username, password } = req.body;
+
+    // Find the user by username
+    const user = await User.findOne({ where: { username } });
+    console.log("/token:",username)
+    if (!user) {
+      throw new UnauthorizedError('Invalid username/password');
     }
 
-    const { username, password } = req.body;
-    const user = await User.authenticate(username, password);
+    // Compare hashed password with input password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      throw new UnauthorizedError('Invalid username/password');
+    }
+
+    // Generate JWT token
     const token = createToken(user);
-    return res.json({ token });
-  } catch (err) {
-    return next(err);
+
+    res.json({ token });
+  } catch (error) {
+    next(error); // Pass error to error handler middleware
   }
 });
 

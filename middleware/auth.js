@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User, League, Team } = require('../models');
+const { JWT_SECRET } = process.env; // Changed SECRET_KEY to JWT_SECRET
 
 /**
  * Middleware to authenticate JWT tokens
@@ -8,20 +9,18 @@ const { User, League, Team } = require('../models');
  * @param {Function} next - Express next middleware function
  */
 function authenticateJWT(req, res, next) {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ error: 'Invalid token' });
+  try {
+    const authHeader = req.headers && req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7); // Extract the token from the Authorization header
+      const decoded = jwt.verify(token, JWT_SECRET); // Verify the token with your secret key
+      req.user = decoded; // Set the decoded user information to req.user
     }
-
-    req.user = decoded;
     next();
-  });
+  } catch (err) {
+    console.error('JWT verification error:', err.message);
+    next(err); // Handle errors or continue to next middleware
+  }
 }
 
 /**
@@ -31,10 +30,18 @@ function authenticateJWT(req, res, next) {
  * @param {Function} next - Express next middleware function
  */
 function ensureLoggedIn(req, res, next) {
-  if (!req.user) {
+  try {
+    // Extract the token from the Authorization header
+    const token = req.headers.authorization.split(" ")[1]; // Bearer <token>
+    
+    // Verify the token and set the payload as req.user
+    const payload = jwt.verify(token, JWT_SECRET); // Changed SECRET_KEY to JWT_SECRET
+    req.user = payload;
+    return next();
+  } catch (err) {
+    console.log('Unauthorized: You must be logged in');
     return res.status(401).json({ error: 'Unauthorized: You must be logged in' });
   }
-  next();
 }
 
 /**

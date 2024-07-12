@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
+const { UnauthorizedError } = require('../expressError');
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
@@ -29,21 +30,57 @@ module.exports = (sequelize, DataTypes) => {
     password: {
       type: DataTypes.STRING,
       allowNull: false,
-      set(value) {
-        this.setDataValue('password', bcrypt.hashSync(value, 10));
-      },
     },
     bio: {
       type: DataTypes.STRING,
       allowNull: true,
-    }
+    },
+    isAdmin: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   }, {
     tableName: 'Users',
+    hooks: {
+      // Hash password before saving new or updated user
+      beforeCreate: async (user) => {
+        if (user.password) {
+          const hashedPassword = await bcrypt.hash(user.password, 10);
+          user.password = hashedPassword;
+        }
+      },
+      beforeUpdate: async (user) => {
+        if (user.changed('password')) {
+          const hashedPassword = await bcrypt.hash(user.password, 10);
+          user.password = hashedPassword;
+        }
+      },
+    },
   });
 
   // Define custom instance method for validating password
   User.prototype.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);
+  };
+
+  // Define authenticate method for user authentication
+  User.authenticate = async function(username, password) {
+    // Find the user by username
+    const user = await User.findOne({ where: { username } });
+
+    if (user && user.validPassword(password)) {
+      // Return user object without password field
+      return {
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        isAdmin: user.isAdmin,
+      };
+    }
+
+    throw new UnauthorizedError("Invalid username/password");
   };
 
   // Define associations
@@ -60,29 +97,28 @@ module.exports = (sequelize, DataTypes) => {
 
   User.findAllWithFilters = async (searchFilters = {}) => {
     const where = {};
-  
+
     const { firstName, lastName, email, username } = searchFilters;
-  
+
     if (firstName) {
       where.firstName = { [Op.iLike]: `%${firstName}%` };
     }
-  
+
     if (lastName) {
       where.lastName = { [Op.iLike]: `%${lastName}%` };
     }
-  
+
     if (email) {
       where.email = { [Op.iLike]: `%${email}%` };
     }
-  
+
     if (username) {
       where.username = { [Op.iLike]: `%${username}%` };
     }
-  
+
     const users = await User.findAll({ where });
     return users;
   };
-  
 
   return User;
 };
