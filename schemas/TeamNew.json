@@ -15,15 +15,13 @@
       "maxPlayers": {
         "type": "integer",
         "minimum": 1
-      },
-      "leagueId": {
-        "type": "integer",
-        "minimum": 1
       }
     },
     "additionalProperties": false,
     "required": [
-      "name"
+      "name",
+      "password",
+      "maxPlayers"
     ]
   }
   

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { Team, Player, Match } = require('../models');
+const { Team, Match, User } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isTeamAdmin } = require('../middleware/auth');
 
@@ -48,23 +48,30 @@ router.get('/:id', authenticateJWT, ensureLoggedIn, async (req, res) => {
  */
 // Create a new team
 router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
+  const { name, password, maxPlayers } = req.body;
+  const adminId = req.user.id; // Assuming req.user has the authenticated user's details
+
   try {
-    validateSchema(req.body, schemas.TeamNew);
-
-    const { name, password, maxPlayers } = req.body;
-    const adminId = req.user.id;
-
-    // Create the team and associate it with the user
-    const team = await Team.create({ 
-      name, 
+    // Create the team in the database
+    const team = await Team.create({
+      name,
       password,
       maxPlayers,
-      adminId 
+      adminId
     });
 
-    res.status(201).json(team);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    // Update the user to mark them as a team admin if not already
+    const user = await User.findByPk(adminId);
+    if (!user.isTeamAdmin) {
+      await user.update({ isTeamAdmin: true });
+    }
+
+    // Respond with success message or the created team data
+    res.status(201).json({ team });
+
+  } catch (err) {
+    console.error('Error creating team:', err);
+    res.status(500).json({ error: 'Failed to create team' });
   }
 });
 
