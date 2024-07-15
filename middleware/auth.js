@@ -40,7 +40,6 @@ function ensureLoggedIn(req, res, next) {
     const token = authHeader.split(" ")[1]; // Bearer <token>
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = payload;
-    console.log('Authenticated user:', req.user);
     return next();
   } catch (err) {
     console.log('Unauthorized: Invalid token', err);

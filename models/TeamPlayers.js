@@ -1,23 +1,31 @@
 module.exports = (sequelize, DataTypes) => {
-    const TeamPlayers = sequelize.define('TeamPlayers', {
-      id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
+  const TeamPlayers = sequelize.define('TeamPlayers', {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'Users',
+        key: 'id'
       },
-      userId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
+      unique: 'unique_user_team', // Unique constraint name
+    },
+    teamId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'Teams',
+        key: 'id'
       },
-      teamId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      // Optionally, you can include additional fields like role, etc.
-    }, {
-      tableName: 'TeamPlayers',
-    });
-  
-    return TeamPlayers;
-  };
-  
+      unique: 'unique_user_team', // Unique constraint name
+    },
+  }, {
+    tableName: 'TeamPlayers',
+  });
+
+  return TeamPlayers;
+};
