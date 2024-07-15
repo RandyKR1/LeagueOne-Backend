@@ -30,12 +30,14 @@ async function seed() {
       password: 'leaguepass1', // Ensure passwords are hashed if using real data
       maxTeams: 20,
       description: 'Top tier league',
+      adminId: 1
     },
     {
       name: 'Championship',
       password: 'leaguepass2',
       maxTeams: 24,
       description: 'Second tier league',
+      adminId: 2
     },
     // Add more leagues as needed
   ]);

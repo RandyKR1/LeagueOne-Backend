@@ -46,10 +46,22 @@ router.get('/:id', authenticateJWT, ensureLoggedIn, async (req, res) => {
  * @description Create a new team
  * @access Private
  */
+// Create a new team
 router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
     validateSchema(req.body, schemas.TeamNew);
-    const team = await Team.create(req.body);
+
+    const { name, password, maxPlayers } = req.body;
+    const adminId = req.user.id;
+
+    // Create the team and associate it with the user
+    const team = await Team.create({ 
+      name, 
+      password,
+      maxPlayers,
+      adminId 
+    });
+
     res.status(201).json(team);
   } catch (error) {
     res.status(400).json({ error: error.message });

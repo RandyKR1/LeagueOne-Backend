@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { League, Team } = require('../models');
+const { League, Team, User, Match } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isLeagueAdmin, isTeamAdmin } = require('../middleware/auth');
 
@@ -28,33 +28,56 @@ router.get('/', authenticateJWT, ensureLoggedIn, async (req, res) => {
  * @description Get league by ID
  * @access Logged in users
  */
-router.get('/:id', authenticateJWT, ensureLoggedIn, async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
-    const league = await League.findByPk(req.params.id);
-    if (league) {
-      res.status(200).json(league);
-    } else {
-      res.status(404).json({ error: 'League not found' });
+    const league = await League.findByPk(req.params.id, {
+      include: [
+        { model: User, as: 'admin', attributes: ['id', 'firstName'] },
+        { model: Match, as: 'matches' }
+      ]
+    });
+    if (!league) {
+      return res.status(404).json({ error: 'League not found' });
     }
+    res.json(league);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    next(error);
   }
 });
 
 /**
  * @route POST /leagues/create
- * @description Create a new league
+ * @description Create a new league and add currentUser as LeagueAdmin
  * @access Logged in users
  */
 router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
     validateSchema(req.body, schemas.LeagueNew);
-    const league = await League.create(req.body);
+    const { name, password, maxTeams, description } = req.body;
+    const adminId = req.user.id;  // Get the ID of the user making the request
+
+    const league = await League.create({
+      name,
+      password,
+      maxTeams,
+      description,
+      adminId
+    });
+
+    await league.addMember(adminId);
+
+    // Set the user as league admin
+    const user = await User.findByPk(adminId);
+    user.isLeagueAdmin = true;
+    await user.save();
+
     res.status(201).json(league);
   } catch (error) {
+    console.error("Error creating league:", error);
     res.status(400).json({ error: error.message });
   }
 });
+
 
 /**
  * @route POST /leagues/:id/join

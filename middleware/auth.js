@@ -15,6 +15,7 @@ function authenticateJWT(req, res, next) {
       const token = authHeader.substring(7); // Extract the token from the Authorization header
       const decoded = jwt.verify(token, JWT_SECRET); // Verify the token with your secret key
       req.user = decoded; // Set the decoded user information to req.user
+      console.log("User:", req.user)
     }
     next();
   } catch (err) {
@@ -31,18 +32,23 @@ function authenticateJWT(req, res, next) {
  */
 function ensureLoggedIn(req, res, next) {
   try {
-    // Extract the token from the Authorization header
-    const token = req.headers.authorization.split(" ")[1]; // Bearer <token>
-    
-    // Verify the token and set the payload as req.user
-    const payload = jwt.verify(token, JWT_SECRET); // Changed SECRET_KEY to JWT_SECRET
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      console.log('Authorization header missing');
+      return res.status(401).json({ error: 'Unauthorized: Missing Authorization header' });
+    }
+    const token = authHeader.split(" ")[1]; // Bearer <token>
+    const payload = jwt.verify(token, JWT_SECRET);
     req.user = payload;
+    console.log('Authenticated user:', req.user);
     return next();
   } catch (err) {
-    console.log('Unauthorized: You must be logged in');
-    return res.status(401).json({ error: 'Unauthorized: You must be logged in' });
+    console.log('Unauthorized: Invalid token', err);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 }
+
+
 
 /**
  * Middleware to ensure the user is a league admin

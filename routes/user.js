@@ -30,7 +30,7 @@ router.get('/', authenticateJWT, ensureLoggedIn, async (req, res) => {
  * @description Get a user by username
  * @access Private
  */
-router.get('/:username', ensureLoggedIn, async (req, res) => {
+router.get('/:username', async (req, res) => {
   try {
     const user = await User.findOne({ where: { username: req.params.username } });
     if (user) {

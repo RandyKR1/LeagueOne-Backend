@@ -32,6 +32,14 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id', // key in the target model
       },
     },
+    adminId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Users', // name of the target model
+        key: 'id', // key in the target model
+      },
+    },
   }, {
     tableName: 'Teams',
   });

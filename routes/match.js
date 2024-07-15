@@ -60,16 +60,20 @@ router.get('/:matchId', authenticateJWT, ensureLoggedIn, async (req, res) => {
  */
 router.post('/create', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (req, res) => {
   const { leagueId } = req.params;
+  console.log('League Id gathered from params:', leagueId)
   try {
     validateSchema(req.body, schemas.MatchNew);
-    const { team1Id, team2Id, date, location } = req.body;
+    const { eventLocation, eventCompetition, eventDate, eventType, eventParticipants, eventResults } = req.body;
+    console.log("Request Body:", req.body)
 
     const match = await Match.create({
       leagueId,
-      team1Id,
-      team2Id,
-      date,
-      location
+      eventType,
+      eventLocation,
+      eventCompetition,
+      eventParticipants,
+      eventDate,
+      eventResults,
     });
 
     res.status(201).json(match);

@@ -35,7 +35,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    isAdmin: {
+    isLeagueAdmin: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    isTeamAdmin: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
@@ -56,7 +60,16 @@ module.exports = (sequelize, DataTypes) => {
         }
       },
     },
+    getterMethods: {
+      name() {
+        return `${this.firstName} ${this.lastName}`;
+      },
+    },
   });
+
+
+
+  
 
   // Define custom instance method for validating password
   User.prototype.validPassword = function(password) {

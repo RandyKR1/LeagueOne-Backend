@@ -7,37 +7,38 @@
         "type": "integer",
         "minimum": 1
       },
-      "eventName": {
+      "eventType": {
         "type": "string",
         "minLength": 1,
-        "maxLength": 100
+        "maxLength": 50
       },
       "eventLocation": {
         "type": "string",
         "minLength": 1,
         "maxLength": 100
       },
-      "eventType": {
+      "eventCompetition": {
         "type": "string",
-        "minLength": 1,
-        "maxLength": 50
+        "enum": ["Soccer", "Football", "Hockey", "Basketball", "Tennis", "Golf", "Baseball", "Other"]
+      },
+      "eventParticipants": {
+        "type": "string"
+      },
+      "eventDate": {
+      "type": "string"
       },
       "eventResults": {
         "type": "string",
         "minLength": 0
-      },
-      "creatorId": {
-        "type": "integer",
-        "minimum": 1
       }
     },
     "additionalProperties": false,
     "required": [
       "leagueId",
-      "eventName",
+      "eventDate",
       "eventLocation",
       "eventType",
-      "creatorId"
+      "eventCompetition"
     ]
   }
   
