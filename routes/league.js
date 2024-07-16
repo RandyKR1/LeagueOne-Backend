@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { League, Team, User, Match } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
-const { authenticateJWT, ensureLoggedIn, isLeagueAdmin, isTeamAdmin } = require('../middleware/auth');
+const { authenticateJWT, ensureLoggedIn, isLeagueAdmin, isTeamAdmin, isTeamAdminForLeagueJoin } = require('../middleware/auth');
 
 const schemas = {
   LeagueNew: require('../schemas/LeagueNew.json'),
@@ -84,35 +84,47 @@ router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
  * @description Team admin joins a league
  * @access Team admins
  */
-router.post('/:id/join', authenticateJWT, ensureLoggedIn, isTeamAdmin, async (req, res) => {
-  const { teamId } = req.body;
+router.post('/:id/join', authenticateJWT, ensureLoggedIn, isTeamAdminForLeagueJoin, async (req, res) => {
   const leagueId = req.params.id;
-  const userId = req.user.id;
+  const { teamId } = req.body;
 
   try {
+    console.log(`Joining league: ${leagueId} with team: ${teamId}`);
+
+    // Check if the league exists
     const league = await League.findByPk(leagueId);
     if (!league) {
+      console.error(`League not found: ${leagueId}`);
       return res.status(404).json({ error: 'League not found' });
     }
 
+    // Check if the team exists
     const team = await Team.findByPk(teamId);
     if (!team) {
+      console.error(`Team not found: ${teamId}`);
       return res.status(404).json({ error: 'Team not found' });
     }
 
-    // Check if the user is already part of the league
+    // Check if the team is already in the league
     const isMember = await league.hasTeam(teamId);
     if (isMember) {
-      return res.status(400).json({ error: 'Team is already part of the league' });
+      console.error(`Team is already a member of the league: ${teamId}`);
+      return res.status(400).json({ error: 'Team is already a member of the league' });
     }
 
     // Add team to the league
-    await league.addTeam(teamId);
-    res.status(200).json({ message: 'Team joined the league successfully' });
+    console.log(`Adding team ${teamId} to league ${leagueId}`);
+    await league.addTeam(team);
+    console.log(`Team added to league: ${teamId} -> ${leagueId}`);
+
+    res.json({ message: 'Team joined the league successfully', league });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error joining league:', error);
+    res.status(500).json({ error: 'Unable to join due to backend issue in league.js' });
   }
 });
+
+
 
 /**
  * @route PUT /leagues/:id

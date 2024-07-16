@@ -42,8 +42,7 @@ module.exports = (sequelize, DataTypes) => {
   League.associate = (models) => {
     // A league can have one admin (user)
     League.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId' });
-    // A league can have many teams
-    League.hasMany(models.Team, { as: 'teams', foreignKey: 'leagueId' });
+    League.belongsToMany(models.Team, { through: 'TeamLeagues', as: 'teams', foreignKey: 'leagueId' });
     // A league can have many members (users)
     League.belongsToMany(models.User, { through: 'LeagueMembers', as: 'members' });
     // A league can have many matches

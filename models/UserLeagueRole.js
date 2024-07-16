@@ -17,7 +17,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      // Optionally, you can include additional fields related to the user-league relationship
     }, {
       tableName: 'UserLeagueRoles',
     });

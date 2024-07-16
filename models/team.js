@@ -58,6 +58,8 @@ module.exports = (sequelize, DataTypes) => {
     Team.belongsTo(models.League, { as: 'league', foreignKey: 'leagueId' });
     // A team can participate in many matches
     Team.belongsToMany(models.Match, { through: 'MatchTeams', as: 'matches' });
+     // A team can participate in many leagues
+     Team.belongsToMany(models.League, { through: 'TeamLeagues', as: 'leagues', foreignKey: 'teamId' });
   };
 
   Team.findAllWithFilters = async (searchFilters = {}) => {

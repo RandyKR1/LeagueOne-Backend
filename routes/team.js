@@ -84,31 +84,6 @@ router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
   }
 });
 
-// /**
-//  * @route POST /teams/:id/join
-//  * @description Join a team
-//  * @access Private
-//  */
-// router.get('/:id/join', async (req, res) => {
-//   const teamId = req.params.id;
-//   try {
-//     const team = await Team.findByPk(teamId, {
-//       include: [
-//         { model: User, as: 'players' }, // Include the players
-//         { model: User, as: 'admin' },   // Optionally include the admin details
-//       ],
-//     });
-
-//     if (!team) {
-//       return res.status(404).json({ error: 'Team not found' });
-//     }
-
-//     res.json(team);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
 /**
  * @route POST /teams/:id/join
  * @description Join a team
@@ -217,6 +192,31 @@ router.get('/:teamId/matches', authenticateJWT, ensureLoggedIn, async (req, res)
     }
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @route GET /teams/admin/:userId
+ * @description Get teams where the user is an admin
+ * @access Private
+ */
+router.get('/admin/:userId', authenticateJWT, ensureLoggedIn, async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const teams = await Team.findAll({
+      where: { adminId: userId },
+      include: [{ model: User, as: 'admin' }] // Optionally include admin details
+    });
+
+    if (!teams || teams.length === 0) {
+      return res.status(404).json({ error: 'No teams found where user is admin' });
+    }
+
+    res.status(200).json(teams);
+  } catch (error) {
+    console.error('Error retrieving teams for admin:', error);
+    res.status(500).json({ error: 'Failed to retrieve teams for admin' });
   }
 });
 

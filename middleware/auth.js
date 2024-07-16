@@ -92,32 +92,42 @@ async function isTeamAdmin(req, res, next) {
 }
 
 /**
- * Middleware to ensure the user is a league member
+/**
+ * Middleware to ensure the user is a team admin based on the teamId in the request body
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
  */
-async function isLeagueMember(req, res, next) {
-  const { user, params } = req;
-  const leagueId = params.leagueId || params.id;
+async function isTeamAdminForLeagueJoin(req, res, next) {
+  const { user, body } = req;
+  const teamId = body.teamId;
+
+  if (!teamId) {
+    console.error('Team ID is missing from request body');
+    return res.status(400).json({ error: 'Team ID is required' });
+  }
+
   try {
-    const league = await League.findByPk(leagueId, {
-      include: [{ model: User, as: 'members', where: { id: user.id } }]
-    });
-    if (league) {
+    const team = await Team.findByPk(teamId);
+    if (team && team.adminId === user.id) {
+      console.log(`User ${user.id} is admin of team ${teamId}`);
       return next();
     } else {
-      return res.status(403).json({ error: 'Forbidden: You must be a league member' });
+      console.error(`User ${user.id} is not an admin of team ${teamId}`);
+      return res.status(403).json({ error: 'Forbidden: You must be a team admin' });
     }
   } catch (error) {
+    console.error('Error checking team admin:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
+
+
 
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
   isLeagueAdmin,
   isTeamAdmin,
-  isLeagueMember
+  isTeamAdminForLeagueJoin
 };
