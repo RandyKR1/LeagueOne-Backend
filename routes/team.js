@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { Team, Match, User, TeamPlayers } = require('../models');
+const { Team, Match, User, TeamPlayers, League } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isTeamAdmin } = require('../middleware/auth');
+
 
 const schemas = {
   TeamNew: require('../schemas/TeamNew.json'),
@@ -34,8 +35,9 @@ router.get('/:id', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
     const team = await Team.findByPk(teamId, {
       include: [
-        { model: User, as: 'players' }, // Include the players
-        { model: User, as: 'admin' },   // Include the admin details
+        { model: User, as: 'players' }, 
+        { model: User, as: 'admin' },   
+        { model: League, as: 'leagues', attributes: ['id', 'name'] }
       ],
     });
 

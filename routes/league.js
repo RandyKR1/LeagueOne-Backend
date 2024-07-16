@@ -65,8 +65,6 @@ router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
       adminId
     });
 
-    await league.addMember(adminId);
-
     // Set the user as league admin
     const user = await User.findByPk(adminId);
     user.isLeagueAdmin = true;

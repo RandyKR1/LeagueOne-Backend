@@ -104,8 +104,6 @@ module.exports = (sequelize, DataTypes) => {
     User.belongsToMany(models.Team, { through: 'TeamPlayers', as: 'teams', foreignKey: 'userId' });
     // A user can be an admin of many leagues
     User.hasMany(models.League, { as: 'administeredLeagues', foreignKey: 'adminId' });
-    // A user can belong to many leagues as a member
-    User.belongsToMany(models.League, { through: 'LeagueMembers', as: 'leagues' });
   };
 
   User.findAllWithFilters = async (searchFilters = {}) => {

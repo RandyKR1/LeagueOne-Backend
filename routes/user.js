@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { User } = require('../models');
+const { User, Team, League } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn } = require('../middleware/auth');
+const team = require('../models/team');
 
 const schemas = {
   UserNew: require('../schemas/UserNew.json'),
@@ -32,7 +33,13 @@ router.get('/', authenticateJWT, ensureLoggedIn, async (req, res) => {
  */
 router.get('/:username', async (req, res) => {
   try {
-    const user = await User.findOne({ where: { username: req.params.username } });
+    const user = await User.findOne({ 
+      where: { username: req.params.username },
+      include: [
+        {model: Team, as: 'teams'},
+      ]
+     });
+
     if (user) {
       res.status(200).json(user);
     } else {
