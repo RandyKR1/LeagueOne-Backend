@@ -37,6 +37,8 @@ router.get('/:username', async (req, res) => {
       where: { username: req.params.username },
       include: [
         {model: Team, as: 'teams'},
+        {model: Team, as: 'administeredTeams'},
+        {model: League, as: 'administeredLeagues'},
       ]
      });
 
