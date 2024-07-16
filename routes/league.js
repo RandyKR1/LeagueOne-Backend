@@ -33,7 +33,8 @@ router.get('/:id', async (req, res, next) => {
     const league = await League.findByPk(req.params.id, {
       include: [
         { model: User, as: 'admin', attributes: ['id', 'firstName'] },
-        { model: Match, as: 'matches' }
+        { model: Match, as: 'matches' },
+        {model: Team, as: 'teams'}
       ]
     });
     if (!league) {
