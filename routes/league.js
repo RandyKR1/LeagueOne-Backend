@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { League, Team, User, Match , Standing} = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
-const { authenticateJWT, ensureLoggedIn, isLeagueAdmin, isTeamAdmin, isTeamAdminForLeagueJoin } = require('../middleware/auth');
+const { authenticateJWT, ensureLoggedIn, isLeagueAdmin, isTeamAdminForLeagueJoin } = require('../middleware/auth');
 
 const schemas = {
   LeagueNew: require('../schemas/LeagueNew.json'),
@@ -34,7 +34,7 @@ router.get('/:id', async (req, res, next) => {
       include: [
         { model: User, as: 'admin', attributes: ['id', 'firstName'] },
         { model: Match, as: 'matches' },
-        {model: Team, as: 'teams'}
+        { model: Team, as: 'teams'}
       ]
     });
     if (!league) {
@@ -55,7 +55,7 @@ router.get('/:id/standings', async (req, res) => {
   const { id } = req.params;
   try {
     const standings = await Standing.findAll({
-      where: { leagueId: id }, // Corrected to use leagueId instead of id
+      where: { leagueId: id }, 
       include: [{ model: Team, as: 'team' }], // Ensure this matches your model associations
     });
     res.json(standings);
@@ -108,33 +108,48 @@ router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
  */
 router.post('/:id/join', authenticateJWT, ensureLoggedIn, isTeamAdminForLeagueJoin, async (req, res) => {
   const leagueId = req.params.id;
-  const { teamId } = req.body;
+  const { teamId, password } = req.body;
 
   try {
-    console.log(`Joining league: ${leagueId} with team: ${teamId}`);
-
     // Check if the league exists
     const league = await League.findByPk(leagueId);
     if (!league) {
-      console.error(`League not found: ${leagueId}`);
       return res.status(404).json({ error: 'League not found' });
+    }
+
+    // Check if the password is correct
+    if (!league.validPassword(password)) {
+      return res.status(401).json({ error: 'Invalid password' });
     }
 
     // Check if the team exists
     const team = await Team.findByPk(teamId);
     if (!team) {
-      console.error(`Team not found: ${teamId}`);
       return res.status(404).json({ error: 'Team not found' });
     }
 
+    // Check if the team is already a member of the league
     const isMember = await league.hasTeam(teamId);
     if (isMember) {
-      console.error(`Team is already a member of the league: ${teamId}`);
       return res.status(400).json({ error: 'Team is already a member of the league' });
     }
 
+    // Check if adding this team would exceed the maximum allowed teams
+    const currentTeamCount = await league.getNumberOfTeams();
+    if (league.maxTeams && currentTeamCount >= league.maxTeams) {
+      return res.status(400).json({ error: 'League has reached the maximum number of teams' });
+    }
+
+    // Add the team to the league and create standings
     await league.addTeam(team);
-    await Standing.create({ leagueId, teamId, points: 0, wins: 0, losses: 0, draws: 0 });
+    const [standing, created] = await Standing.findOrCreate({
+      where: { leagueId, teamId },
+      defaults: { points: 0, wins: 0, losses: 0, draws: 0 }
+    });
+
+    if (!created) {
+      return res.status(400).json({ error: 'Standings already exist for this team in this league' });
+    }
 
     res.json({ message: 'Team joined the league successfully', league });
   } catch (error) {
@@ -142,7 +157,6 @@ router.post('/:id/join', authenticateJWT, ensureLoggedIn, isTeamAdminForLeagueJo
     res.status(500).json({ error: 'Unable to join due to backend issue in league.js' });
   }
 });
-
 
 
 /**

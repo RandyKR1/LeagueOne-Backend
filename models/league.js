@@ -64,14 +64,18 @@ module.exports = (sequelize, DataTypes) => {
     League.hasMany(models.Standing, { as: 'standings', foreignKey: 'leagueId' });
   };
 
-  League.prototype.getStanding = async function(teamId) {
-    const standing = await this.getStandings({ where: { teamId } });
-    if (standing.length === 0) {
-      return await this.createStanding({ teamId, leagueId: this.id });
-    }
-    return standing[0];
+  League.prototype.getSortedStandings = async function() {
+    return await this.getStandings({ order: [['points', 'DESC']] });
   };
 
+  League.prototype.getNumberOfTeams = async function() {
+    const teams = await this.getTeams(); // Assuming you have a `teams` association
+    return teams.length;
+  };
+  
+  League.prototype.validPassword = function(password) {
+    return bcrypt.compareSync(password, this.password);
+  };  
   
   League.findAllWithFilters = async function(searchFilters = {}) {
     const where = {};

@@ -53,6 +53,7 @@ module.exports = (sequelize, DataTypes) => {
 
   Match.prototype.updateStandings = async function() {
     const league = await this.getLeague();
+    const Standing = sequelize.models.Standing;
 
     // Initialize variables to track points and results
     let team1Points = 0;
@@ -79,27 +80,27 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     // Update standings for team1
-    const team1Standing = await league.getStanding(this.team1);
+    const team1Standing = await Standing.findByLeagueAndTeam(league.id, this.team1);
     if (team1Standing) {
       if (team1Result === 'win') {
-        await team1Standing.increment('wins');
+        await team1Standing.updateRecord(1, 0, 0);
       } else if (team1Result === 'loss') {
-        await team1Standing.increment('losses');
+        await team1Standing.updateRecord(0, 1, 0);
       } else {
-        await team1Standing.increment('draws');
+        await team1Standing.updateRecord(0, 0, 1);
       }
       await team1Standing.updatePoints(team1Points);
     }
 
     // Update standings for team2
-    const team2Standing = await league.getStanding(this.team2);
+    const team2Standing = await Standing.findByLeagueAndTeam(league.id, this.team2);
     if (team2Standing) {
       if (team2Result === 'win') {
-        await team2Standing.increment('wins');
+        await team2Standing.updateRecord(1, 0, 0);
       } else if (team2Result === 'loss') {
-        await team2Standing.increment('losses');
+        await team2Standing.updateRecord(0, 1, 0);
       } else {
-        await team2Standing.increment('draws');
+        await team2Standing.updateRecord(0, 0, 1);
       }
       await team2Standing.updatePoints(team2Points);
     }

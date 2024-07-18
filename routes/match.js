@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { Match, League, Team, MatchResult } = require('../models');
+const { Match, League, Team, Standing } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isLeagueAdmin } = require('../middleware/auth');
 
@@ -48,7 +48,12 @@ router.get('/:matchId', authenticateJWT, ensureLoggedIn, async (req, res) => {
   const { leagueId, matchId } = req.params;
   try {
     const match = await Match.findOne({
-      where: { id: matchId, leagueId }
+      where: { id: matchId, leagueId },
+      include: [
+        { model: Team, as: 'homeTeam', attributes: ['id', 'name'] },
+        { model: Team, as: 'awayTeam', attributes: ['id', 'name'] },
+      ],
+      attributes: ['id', 'leagueId', 'eventType', 'eventLocation', 'team1', 'team2', 'team1Score', 'team2Score'],
     });
 
     if (match) {
@@ -70,8 +75,14 @@ router.post('/create', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (re
   const { leagueId } = req.params;
   try {
     validateSchema(req.body, schemas.MatchNew);
+
     const { eventLocation, eventType, eventResults, team1, team2, team1Score, team2Score } = req.body;
 
+    if (team1 === team2) {
+      return res.status(400).json({ error: 'A team cannot play against itself' });
+    }
+
+    // Create the match
     const match = await Match.create({
       leagueId,
       eventType,
@@ -83,8 +94,21 @@ router.post('/create', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (re
       team2Score
     });
 
-    res.status(201).json(match);
+    // Get the league instance
+    const league = await League.findByPk(leagueId);
+    if (!league) {
+      return res.status(404).json({ error: 'League not found' });
+    }
+
+    // Retrieve sorted standings
+    const standings = await Standing.getSortedStandings(leagueId);
+
+    res.status(201).json({
+      match,
+      standings
+    });
   } catch (error) {
+    console.error(error); // Log the error for debugging purposes
     res.status(400).json({ error: error.message });
   }
 });

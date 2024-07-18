@@ -46,6 +46,12 @@ module.exports = (sequelize, DataTypes) => {
     Standing.belongsTo(models.Team, { as: 'team', foreignKey: 'teamId' });
   };
 
+  Standing.findByLeagueAndTeam = async function(leagueId, teamId) {
+    return await this.findOne({
+      where: { leagueId, teamId },
+    });
+  };
+  
   Standing.prototype.updatePoints = async function(points) {
     this.points += points;
     await this.save();
