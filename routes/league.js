@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { League, Team, User, Match } = require('../models');
+const { League, Team, User, Match , Standing} = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isLeagueAdmin, isTeamAdmin, isTeamAdminForLeagueJoin } = require('../middleware/auth');
 
@@ -47,6 +47,25 @@ router.get('/:id', async (req, res, next) => {
 });
 
 /**
+ * @route GET /leagues/standings
+ * @description get team standings for league based on id
+ * @access Logged in users
+ */
+router.get('/:id/standings', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const standings = await Standing.findAll({
+      where: { leagueId: id }, // Corrected to use leagueId instead of id
+      include: [{ model: Team, as: 'team' }], // Ensure this matches your model associations
+    });
+    res.json(standings);
+  } catch (error) {
+    console.error('Error fetching standings:', error); // Add logging
+    res.status(500).json({ error: 'Failed to fetch standings' });
+  }
+});
+
+/**
  * @route POST /leagues/create
  * @description Create a new league and add currentUser as LeagueAdmin
  * @access Logged in users
@@ -54,15 +73,19 @@ router.get('/:id', async (req, res, next) => {
 router.post('/create', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
     validateSchema(req.body, schemas.LeagueNew);
-    const { name, password, maxTeams, description } = req.body;
+    const { name, password, maxTeams, competition, description, firstPlacePoints, secondPlacePoints, drawPoints } = req.body;
     const adminId = req.user.id;  // Get the ID of the user making the request
 
     const league = await League.create({
       name,
       password,
       maxTeams,
+      competition,
       description,
-      adminId
+      adminId,
+      firstPlacePoints,
+      secondPlacePoints,
+      drawPoints
     });
 
     // Set the user as league admin
@@ -104,17 +127,14 @@ router.post('/:id/join', authenticateJWT, ensureLoggedIn, isTeamAdminForLeagueJo
       return res.status(404).json({ error: 'Team not found' });
     }
 
-    // Check if the team is already in the league
     const isMember = await league.hasTeam(teamId);
     if (isMember) {
       console.error(`Team is already a member of the league: ${teamId}`);
       return res.status(400).json({ error: 'Team is already a member of the league' });
     }
 
-    // Add team to the league
-    console.log(`Adding team ${teamId} to league ${leagueId}`);
     await league.addTeam(team);
-    console.log(`Team added to league: ${teamId} -> ${leagueId}`);
+    await Standing.create({ leagueId, teamId, points: 0, wins: 0, losses: 0, draws: 0 });
 
     res.json({ message: 'Team joined the league successfully', league });
   } catch (error) {

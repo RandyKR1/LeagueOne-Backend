@@ -45,8 +45,8 @@ module.exports = (sequelize, DataTypes) => {
     },
   }, {
     tableName: 'Users',
+    
     hooks: {
-      // Hash password before saving new or updated user
       beforeCreate: async (user) => {
         if (user.password) {
           const hashedPassword = await bcrypt.hash(user.password, 10);
@@ -60,29 +60,17 @@ module.exports = (sequelize, DataTypes) => {
         }
       },
     },
-    getterMethods: {
-      name() {
-        return `${this.firstName} ${this.lastName}`;
-      },
-    },
   });
 
 
-
-  
-
-  // Define custom instance method for validating password
   User.prototype.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);
   };
 
-  // Define authenticate method for user authentication
   User.authenticate = async function(username, password) {
-    // Find the user by username
     const user = await User.findOne({ where: { username } });
 
     if (user && user.validPassword(password)) {
-      // Return user object without password field
       return {
         id: user.id,
         username: user.username,
@@ -96,13 +84,9 @@ module.exports = (sequelize, DataTypes) => {
     throw new UnauthorizedError("Invalid username/password");
   };
 
-  // Define associations
   User.associate = (models) => {
-    // A user can be an admin of many teams
     User.hasMany(models.Team, { as: 'administeredTeams', foreignKey: 'adminId' });
-    // A user can belong to many teams as a player
     User.belongsToMany(models.Team, { through: 'TeamPlayers', as: 'teams', foreignKey: 'userId' });
-    // A user can be an admin of many leagues
     User.hasMany(models.League, { as: 'administeredLeagues', foreignKey: 'adminId' });
   };
 

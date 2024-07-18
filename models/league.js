@@ -1,5 +1,4 @@
 const bcrypt = require('bcrypt');
-const { Op } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   const League = sequelize.define('League', {
@@ -23,6 +22,13 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    competition: {
+      type: DataTypes.ENUM(
+        'Soccer', 'Football', 'Hockey', 'Basketball',
+        'Tennis', 'Golf', 'Baseball', 'Other'
+      ),
+      allowNull: false,
+    },
     description: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -35,20 +41,39 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id',
       },
     },
+    firstPlacePoints: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    secondPlacePoints: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    drawPoints: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    }
   }, {
     tableName: 'Leagues',
   });
 
   League.associate = (models) => {
-    // A league can have one admin (user)
     League.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId' });
     League.belongsToMany(models.Team, { through: 'TeamLeagues', as: 'teams', foreignKey: 'leagueId' });
-    // A league can have many matches
     League.hasMany(models.Match, { as: 'matches', foreignKey: 'leagueId' });
+    League.hasMany(models.Standing, { as: 'standings', foreignKey: 'leagueId' });
   };
 
-   // Define the static method findAllWithFilters
-   League.findAllWithFilters = async function(searchFilters = {}) {
+  League.prototype.getStanding = async function(teamId) {
+    const standing = await this.getStandings({ where: { teamId } });
+    if (standing.length === 0) {
+      return await this.createStanding({ teamId, leagueId: this.id });
+    }
+    return standing[0];
+  };
+
+  
+  League.findAllWithFilters = async function(searchFilters = {}) {
     const where = {};
 
     const { name, maxTeams } = searchFilters;

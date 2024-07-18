@@ -3,20 +3,25 @@
     "$id": "http://our.match.com/matchUpdate.schema.json",
     "type": "object",
     "properties": {
-      "eventName": {
+      "leagueId": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "eventType": {
         "type": "string",
         "minLength": 1,
-        "maxLength": 100
+        "maxLength": 50
       },
       "eventLocation": {
         "type": "string",
         "minLength": 1,
         "maxLength": 100
       },
-      "eventType": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 50
+      "eventParticipants": {
+        "type": "string"
+      },
+      "eventDate": {
+      "type": "string"
       },
       "eventResults": {
         "type": "string",
@@ -24,6 +29,12 @@
       }
     },
     "additionalProperties": false,
-    "required": []
+    "required": [
+      "leagueId",
+      "eventDate",
+      "eventLocation",
+      "eventType",
+      "eventCompetition"
+    ]
   }
   

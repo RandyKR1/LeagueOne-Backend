@@ -1,4 +1,3 @@
-const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 
 module.exports = (sequelize, DataTypes) => {
@@ -28,53 +27,47 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'Leagues', // name of the target model
-        key: 'id', // key in the target model
+        model: 'Leagues',
+        key: 'id',
       },
     },
     adminId: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'Users', // name of the target model
-        key: 'id', // key in the target model
+        model: 'Users',
+        key: 'id',
       },
     },
   }, {
     tableName: 'Teams',
   });
 
-  // Define custom instance method for validating team password
   Team.prototype.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);
   };
 
   Team.associate = (models) => {
-    // A team can have one admin (user)
     Team.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId' });
-    // A team can have many players (users)
     Team.belongsToMany(models.User, { through: 'TeamPlayers', as: 'players', foreignKey: 'teamId' });
-    // A team belongs to one league
     Team.belongsTo(models.League, { as: 'league', foreignKey: 'leagueId' });
-    // A team can participate in many matches
-    Team.belongsToMany(models.Match, { through: 'MatchTeams', as: 'matches' });
-     // A team can participate in many leagues
-     Team.belongsToMany(models.League, { through: 'TeamLeagues', as: 'leagues', foreignKey: 'teamId' });
+    Team.belongsToMany(models.Match, { through: 'MatchTeams', as: 'matches', foreignKey: 'teamId' });
+    Team.belongsToMany(models.League, { through: 'TeamLeagues', as: 'leagues', foreignKey: 'teamId' });
+    Team.hasMany(models.Standing, { as: 'standings', foreignKey: 'teamId' });
   };
 
   Team.findAllWithFilters = async (searchFilters = {}) => {
     const where = {};
-  
     const { name, leagueId } = searchFilters;
-  
+
     if (name) {
       where.name = { [Op.iLike]: `%${name}%` };
     }
-  
+
     if (leagueId) {
       where.leagueId = leagueId;
     }
-  
+
     const teams = await Team.findAll({ where });
     return teams;
   };

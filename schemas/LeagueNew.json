@@ -16,14 +16,30 @@
         "type": "integer",
         "minimum": 1
       },
+      "competition": {
+        "type": "string",
+        "enum": ["Soccer", "Football", "Hockey", "Basketball", "Tennis", "Golf", "Baseball", "Other"]
+      },
       "description": {
         "type": "string",
         "minLength": 0
+      },
+      "firstPlacePoints": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "secondPlacePoints":{
+        "type": "integer"
+      },
+      "drawPoints":{
+        "type": "integer"
       }
     },
     "additionalProperties": false,
     "required": [
-      "name"
+      "name",
+      "firstPlacePoints",
+      "competition"
     ]
   }
   

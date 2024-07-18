@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { Match, League } = require('../models');
+const { Match, League, Team } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isLeagueAdmin } = require('../middleware/auth');
+const { updateStandings } = require('../helpers/updateStandings')
 
 const schemas = {
   MatchNew: require('../schemas/MatchNew.json'),
@@ -60,20 +61,20 @@ router.get('/:matchId', authenticateJWT, ensureLoggedIn, async (req, res) => {
  */
 router.post('/create', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (req, res) => {
   const { leagueId } = req.params;
-  console.log('League Id gathered from params:', leagueId)
   try {
     validateSchema(req.body, schemas.MatchNew);
-    const { eventLocation, eventCompetition, eventDate, eventType, eventParticipants, eventResults } = req.body;
-    console.log("Request Body:", req.body)
+    const { eventLocation, eventType, eventParticipants, eventResults, participant1, participant2, participant1Score, participant2Score } = req.body;
 
     const match = await Match.create({
       leagueId,
       eventType,
       eventLocation,
-      eventCompetition,
       eventParticipants,
-      eventDate,
       eventResults,
+      participant1,
+      participant2,
+      participant1Score,
+      participant2Score
     });
 
     res.status(201).json(match);
@@ -100,6 +101,8 @@ router.put('/:matchId', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (r
     }
 
     await match.update(req.body);
+    await updateStandings(match);
+
     res.status(200).json(match);
   } catch (error) {
     res.status(400).json({ error: error.message });
