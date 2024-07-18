@@ -16,31 +16,21 @@
       "minLength": 1,
       "maxLength": 100
     },
-    "participant1": {
+    "team1": {
       "type": "integer",
       "minimum": 1
     },
-    "participant2": {
+    "team2": {
       "type": "integer",
       "minimum": 1
-    },
-    "participant1Score": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "participant2Score": {
-      "type": "integer",
-      "minimum": 0
     }
   },
   "required": [
     "leagueId",
     "eventType",
     "eventLocation",
-    "participant1",
-    "participant2",
-    "participant1Score",
-    "participant2Score"
+    "team1",
+    "team2"
   ],
   "additionalProperties": true
 }

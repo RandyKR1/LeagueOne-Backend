@@ -51,10 +51,12 @@ module.exports = (sequelize, DataTypes) => {
     Team.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId' });
     Team.belongsToMany(models.User, { through: 'TeamPlayers', as: 'players', foreignKey: 'teamId' });
     Team.belongsTo(models.League, { as: 'league', foreignKey: 'leagueId' });
-    Team.belongsToMany(models.Match, { through: 'MatchTeams', as: 'matches', foreignKey: 'teamId' });
+    Team.hasMany(models.Match, { as: 'matches1', foreignKey: 'team1' }); // Added
+    Team.hasMany(models.Match, { as: 'matches2', foreignKey: 'team2' }); // Added
     Team.belongsToMany(models.League, { through: 'TeamLeagues', as: 'leagues', foreignKey: 'teamId' });
     Team.hasMany(models.Standing, { as: 'standings', foreignKey: 'teamId' });
   };
+  
 
   Team.findAllWithFilters = async (searchFilters = {}) => {
     const where = {};

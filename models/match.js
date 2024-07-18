@@ -17,7 +17,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    participant1: {
+    team1: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'Teams', // Adjust based on your actual model name
+        key: 'id',
+      }
+    },
+    team2: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -25,19 +33,11 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id'
       }
     },
-    participant2: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'Teams', // Adjust based on your actual model name
-        key: 'id'
-      }
-    },
-    participant1Score: {
+    team1Score: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    participant2Score: {
+    team2Score: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
@@ -47,37 +47,12 @@ module.exports = (sequelize, DataTypes) => {
 
   Match.associate = (models) => {
     Match.belongsTo(models.League, { as: 'league', foreignKey: 'leagueId' });
-    Match.belongsTo(models.Team, { as: 'team1', foreignKey: 'participant1' });
-    Match.belongsTo(models.Team, { as: 'team2', foreignKey: 'participant2' });
-    Match.hasMany(models.MatchResult, { as: 'matchResults', foreignKey: 'matchId' });
-  };
-
-  Match.findAllWithFilters = async (searchFilters = {}) => {
-    const where = {};
-    const { date, teamId, leagueId } = searchFilters;
-
-    if (date) {
-      where.date = date;
-    }
-
-    if (teamId) {
-      where[sequelize.Op.or] = [
-        { participant1: teamId },
-        { participant2: teamId },
-      ];
-    }
-
-    if (leagueId) {
-      where.leagueId = leagueId;
-    }
-
-    const matches = await Match.findAll({ where });
-    return matches;
+    Match.belongsTo(models.Team, { as: 'homeTeam', foreignKey: 'team1' });
+    Match.belongsTo(models.Team, { as: 'awayTeam', foreignKey: 'team2' });
   };
 
   Match.prototype.updateStandings = async function() {
     const league = await this.getLeague();
-    const matchResults = await this.getMatchResults(); // Get match results associated with this match
 
     // Initialize variables to track points and results
     let team1Points = 0;
@@ -86,12 +61,12 @@ module.exports = (sequelize, DataTypes) => {
     let team2Result = '';
 
     // Determine match result and points distribution
-    if (this.participant1Score > this.participant2Score) {
+    if (this.team1Score > this.team2Score) {
       team1Points = league.firstPlacePoints;
       team2Points = league.secondPlacePoints;
       team1Result = 'win';
       team2Result = 'loss';
-    } else if (this.participant1Score < this.participant2Score) {
+    } else if (this.team1Score < this.team2Score) {
       team1Points = league.secondPlacePoints;
       team2Points = league.firstPlacePoints;
       team1Result = 'loss';
@@ -104,7 +79,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     // Update standings for team1
-    const team1Standing = await league.getStanding(this.participant1);
+    const team1Standing = await league.getStanding(this.team1);
     if (team1Standing) {
       if (team1Result === 'win') {
         await team1Standing.increment('wins');
@@ -117,7 +92,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     // Update standings for team2
-    const team2Standing = await league.getStanding(this.participant2);
+    const team2Standing = await league.getStanding(this.team2);
     if (team2Standing) {
       if (team2Result === 'win') {
         await team2Standing.increment('wins');

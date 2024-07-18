@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { Match, League, Team } = require('../models');
+const { Match, League, Team, MatchResult } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isLeagueAdmin } = require('../middleware/auth');
-const { updateStandings } = require('../helpers/updateStandings')
 
 const schemas = {
   MatchNew: require('../schemas/MatchNew.json'),
@@ -19,7 +18,15 @@ router.get('/', authenticateJWT, ensureLoggedIn, async (req, res) => {
   const { leagueId } = req.params;
   try {
     const league = await League.findByPk(leagueId, {
-      include: [{ model: Match, as: 'matches' }]
+      include: [{
+        model: Match,
+        as: 'matches',
+        include: [
+          { model: Team, as: 'homeTeam', attributes: ['id', 'name'] },
+          { model: Team, as: 'awayTeam', attributes: ['id', 'name'] },
+        ],
+        attributes: ['id', 'leagueId', 'eventType', 'eventLocation', 'team1', 'team2', 'team1Score', 'team2Score'],
+      }],
     });
 
     if (league) {
@@ -63,18 +70,17 @@ router.post('/create', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (re
   const { leagueId } = req.params;
   try {
     validateSchema(req.body, schemas.MatchNew);
-    const { eventLocation, eventType, eventParticipants, eventResults, participant1, participant2, participant1Score, participant2Score } = req.body;
+    const { eventLocation, eventType, eventResults, team1, team2, team1Score, team2Score } = req.body;
 
     const match = await Match.create({
       leagueId,
       eventType,
       eventLocation,
-      eventParticipants,
       eventResults,
-      participant1,
-      participant2,
-      participant1Score,
-      participant2Score
+      team1,
+      team2,
+      team1Score,
+      team2Score
     });
 
     res.status(201).json(match);
@@ -101,7 +107,6 @@ router.put('/:matchId', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (r
     }
 
     await match.update(req.body);
-    await updateStandings(match);
 
     res.status(200).json(match);
   } catch (error) {
