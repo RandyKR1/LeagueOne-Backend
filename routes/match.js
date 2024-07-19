@@ -52,7 +52,7 @@ router.get('/:matchId', authenticateJWT, ensureLoggedIn, async (req, res) => {
       include: [
         { model: Team, as: 'homeTeam', attributes: ['id', 'name'] },
         { model: Team, as: 'awayTeam', attributes: ['id', 'name'] },
-        { model: League, as: 'league', attributes: ['adminId', 'name']}
+        { model: League, as: 'league', attributes: ['adminId', 'name']},
       ],
       attributes: ['id', 'leagueId', 'eventType', 'eventLocation', 'team1', 'team2', 'team1Score', 'team2Score'],
     });
@@ -140,20 +140,98 @@ router.put('/:matchId', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (r
  */
 router.delete('/:matchId', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (req, res) => {
   const { leagueId, matchId } = req.params;
+
   try {
+    // Parse IDs and validate
+    const leagueIdInt = parseInt(leagueId, 10);
+    const matchIdInt = parseInt(matchId, 10);
+
+    if (isNaN(leagueIdInt) || isNaN(matchIdInt)) {
+      return res.status(400).json({ error: 'Invalid leagueId or matchId' });
+    }
+
+    // Fetch the match
     const match = await Match.findOne({
-      where: { id: matchId, leagueId }
+      where: { id: matchIdInt, leagueId: leagueIdInt },
+      include: [
+        { model: Team, as: 'homeTeam' },
+        { model: Team, as: 'awayTeam' },
+      ],
     });
 
     if (!match) {
       return res.status(404).json({ error: 'Match not found' });
     }
 
+    // Fetch standings
+    const homeTeamStanding = await Standing.findByLeagueAndTeam(leagueIdInt, match.homeTeam.id);
+    const awayTeamStanding = await Standing.findByLeagueAndTeam(leagueIdInt, match.awayTeam.id);
+
+    if (!homeTeamStanding || !awayTeamStanding) {
+      return res.status(404).json({ error: 'Standings not found for one or both teams' });
+    }
+
+    // Helper function to ensure integer values
+    const ensureInteger = (value) => (isNaN(value) ? 0 : value);
+
+    // Reverse the impact of the match results
+    if (match.team1Score > match.team2Score) {
+      // Home team won
+      await homeTeamStanding.updateRecord(
+        ensureInteger(homeTeamStanding.wins - 1),
+        ensureInteger(homeTeamStanding.losses),
+        ensureInteger(homeTeamStanding.draws)
+      );
+      await homeTeamStanding.updatePoints(ensureInteger(homeTeamStanding.points - match.firstPlacePoints));
+      
+      await awayTeamStanding.updateRecord(
+        ensureInteger(awayTeamStanding.wins),
+        ensureInteger(awayTeamStanding.losses - 1),
+        ensureInteger(awayTeamStanding.draws)
+      );
+      await awayTeamStanding.updatePoints(ensureInteger(awayTeamStanding.points));
+      
+    } else if (match.team1Score < match.team2Score) {
+      // Away team won
+      await homeTeamStanding.updateRecord(
+        ensureInteger(homeTeamStanding.wins),
+        ensureInteger(homeTeamStanding.losses - 1),
+        ensureInteger(homeTeamStanding.draws)
+      );
+      await homeTeamStanding.updatePoints(ensureInteger(homeTeamStanding.points));
+      
+      await awayTeamStanding.updateRecord(
+        ensureInteger(awayTeamStanding.wins - 1),
+        ensureInteger(awayTeamStanding.losses),
+        ensureInteger(awayTeamStanding.draws)
+      );
+      await awayTeamStanding.updatePoints(ensureInteger(awayTeamStanding.points - match.firstPlacePoints));
+      
+    } else {
+      // Draw
+      await homeTeamStanding.updateRecord(
+        ensureInteger(homeTeamStanding.wins),
+        ensureInteger(homeTeamStanding.losses),
+        ensureInteger(homeTeamStanding.draws - 1)
+      );
+      await homeTeamStanding.updatePoints(ensureInteger(homeTeamStanding.points - match.drawPoints));
+      
+      await awayTeamStanding.updateRecord(
+        ensureInteger(awayTeamStanding.wins),
+        ensureInteger(awayTeamStanding.losses),
+        ensureInteger(awayTeamStanding.draws - 1)
+      );
+      await awayTeamStanding.updatePoints(ensureInteger(awayTeamStanding.points - match.drawPoints));
+    }
+
+    // Delete the match
     await match.destroy();
     res.status(204).send();
   } catch (error) {
+    console.error('Error deleting match:', error);
     res.status(400).json({ error: error.message });
   }
 });
+
 
 module.exports = router;

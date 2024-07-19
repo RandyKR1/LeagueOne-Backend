@@ -53,16 +53,17 @@ module.exports = (sequelize, DataTypes) => {
   };
   
   Standing.prototype.updatePoints = async function(points) {
-    this.points += points;
+    this.points = points;
     await this.save();
   };
-
+  
   Standing.prototype.updateRecord = async function(wins, losses, draws) {
-    this.wins += wins;
-    this.losses += losses;
-    this.draws += draws;
+    this.wins = wins;
+    this.losses = losses;
+    this.draws = draws;
     await this.save();
   };
+  
 
   return Standing;
 };
