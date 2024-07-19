@@ -17,7 +17,10 @@ const schemas = {
  */
 router.get('/', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
-    const teams = await Team.findAll();
+    const teams = await Team.findAll({
+      include: [
+        { model: User, as: 'admin', attributes: ['firstName', 'lastName', 'username'] },
+      ]});
     res.status(200).json(teams);
   } catch (error) {
     res.status(400).json({ error: error.message });

@@ -18,7 +18,7 @@ router.get('/', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
     const leagues = await League.findAll({
       include: [
-        { model: User, as: 'admin', attributes: ['firstName', 'lastName'] },
+        { model: User, as: 'admin', attributes: ['firstName', 'lastName', 'username'] },
       ]}
     );
     res.status(200).json(leagues);
@@ -36,7 +36,7 @@ router.get('/:id', async (req, res, next) => {
   try {
     const league = await League.findByPk(req.params.id, {
       include: [
-        { model: User, as: 'admin', attributes: ['id', 'firstName', 'lastName'] },
+        { model: User, as: 'admin', attributes: ['id', 'firstName', 'lastName', 'username'] },
         { model: Match, as: 'matches' },
         { model: Team, as: 'teams'}
       ]

@@ -52,7 +52,7 @@ router.get('/:matchId', authenticateJWT, ensureLoggedIn, async (req, res) => {
       include: [
         { model: Team, as: 'homeTeam', attributes: ['id', 'name'] },
         { model: Team, as: 'awayTeam', attributes: ['id', 'name'] },
-        { model: League, as: 'league', attributes: ['adminId']}
+        { model: League, as: 'league', attributes: ['adminId', 'name']}
       ],
       attributes: ['id', 'leagueId', 'eventType', 'eventLocation', 'team1', 'team2', 'team1Score', 'team2Score'],
     });
