@@ -3,38 +3,34 @@
     "$id": "http://our.match.com/matchUpdate.schema.json",
     "type": "object",
     "properties": {
-      "leagueId": {
-        "type": "integer",
-        "minimum": 1
-      },
-      "eventType": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 50
-      },
-      "eventLocation": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 100
-      },
-      "eventParticipants": {
-        "type": "string"
-      },
-      "eventDate": {
-      "type": "string"
-      },
-      "eventResults": {
-        "type": "string",
-        "minLength": 0
-      }
+    "leagueId": {
+      "type": "integer",
+      "minimum": 1
     },
-    "additionalProperties": false,
-    "required": [
-      "leagueId",
-      "eventDate",
-      "eventLocation",
-      "eventType",
-      "eventCompetition"
-    ]
+    "eventType": {
+      "type": "string",
+      "enum": ["Friendly", "League", "Tournament", "Final"]
+    },
+    "eventLocation": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "team1": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "team2": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "eventType",
+    "eventLocation",
+    "team1",
+    "team2"
+  ],
+  "additionalProperties": true
   }
   

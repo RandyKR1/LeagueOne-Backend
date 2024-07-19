@@ -52,6 +52,7 @@ router.get('/:matchId', authenticateJWT, ensureLoggedIn, async (req, res) => {
       include: [
         { model: Team, as: 'homeTeam', attributes: ['id', 'name'] },
         { model: Team, as: 'awayTeam', attributes: ['id', 'name'] },
+        { model: League, as: 'league', attributes: ['adminId']}
       ],
       attributes: ['id', 'leagueId', 'eventType', 'eventLocation', 'team1', 'team2', 'team1Score', 'team2Score'],
     });
@@ -100,13 +101,7 @@ router.post('/create', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (re
       return res.status(404).json({ error: 'League not found' });
     }
 
-    // Retrieve sorted standings
-    const standings = await Standing.getSortedStandings(leagueId);
-
-    res.status(201).json({
-      match,
-      standings
-    });
+    res.status(201).json({match});
   } catch (error) {
     console.error(error); // Log the error for debugging purposes
     res.status(400).json({ error: error.message });

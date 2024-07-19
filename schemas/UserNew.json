@@ -30,6 +30,12 @@
       "maxLength": 255
     }
   },
-  "required": ["firstName", "lastName", "email", "username", "password"],
+  "required": [
+    "firstName", 
+    "lastName", 
+    "email", 
+    "username", 
+    "password"
+  ],
   "additionalProperties": false
 }
