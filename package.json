@@ -17,7 +17,14 @@
     "sequelize-cli": "^6.6.2"
   },
   "scripts": {
-  "seed": "node seeds/seed.js"
-}
-
+    "seed": "node seeds/seed.js",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "sequelize-test-helpers": "^1.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
 }

@@ -1,4 +1,6 @@
 const bcrypt = require('bcrypt');
+const { Op } = require('sequelize');
+
 
 module.exports = (sequelize, DataTypes) => {
   const League = sequelize.define('League', {
@@ -69,7 +71,7 @@ module.exports = (sequelize, DataTypes) => {
   };
 
   League.prototype.getNumberOfTeams = async function() {
-    const teams = await this.getTeams(); // Assuming you have a `teams` association
+    const teams = await this.getTeams();
     return teams.length;
   };
   

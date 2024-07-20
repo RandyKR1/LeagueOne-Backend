@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config(); 
 
 function getDatabaseUri() {
   if (process.env.NODE_ENV === 'test') {
