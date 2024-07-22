@@ -3,6 +3,8 @@ const router = express.Router({ mergeParams: true });
 const { Match, League, Team, Standing } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isLeagueAdmin } = require('../middleware/auth');
+const StandingsService = require('../helpers/updateStandings');
+
 
 const schemas = {
   MatchNew: require('../schemas/MatchNew.json'),
@@ -77,33 +79,28 @@ router.post('/create', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (re
   try {
     validateSchema(req.body, schemas.MatchNew);
 
-    const { eventLocation, eventType, eventResults, team1, team2, team1Score, team2Score } = req.body;
+    const { eventLocation, eventType, team1, team2, team1Score, team2Score } = req.body;
 
     if (team1 === team2) {
       return res.status(400).json({ error: 'A team cannot play against itself' });
     }
 
-    // Create the match
     const match = await Match.create({
       leagueId,
       eventType,
       eventLocation,
-      eventResults,
       team1,
       team2,
       team1Score,
       team2Score
     });
 
-    // Get the league instance
-    const league = await League.findByPk(leagueId);
-    if (!league) {
-      return res.status(404).json({ error: 'League not found' });
-    }
+    await StandingsService.updateStandings(match);
+    
 
-    res.status(201).json({match});
+    res.status(201).json({ match });
   } catch (error) {
-    console.error(error); // Log the error for debugging purposes
+    console.error(error); 
     res.status(400).json({ error: error.message });
   }
 });
@@ -125,7 +122,9 @@ router.put('/:matchId', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (r
       return res.status(404).json({ error: 'Match not found' });
     }
 
+    await StandingsService.reverseStandings(match);
     await match.update(req.body);
+    await StandingsService.updateStandings(match);
 
     res.status(200).json(match);
   } catch (error) {
@@ -142,90 +141,17 @@ router.delete('/:matchId', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async
   const { leagueId, matchId } = req.params;
 
   try {
-    // Parse IDs and validate
-    const leagueIdInt = parseInt(leagueId, 10);
-    const matchIdInt = parseInt(matchId, 10);
-
-    if (isNaN(leagueIdInt) || isNaN(matchIdInt)) {
-      return res.status(400).json({ error: 'Invalid leagueId or matchId' });
-    }
-
-    // Fetch the match
     const match = await Match.findOne({
-      where: { id: matchIdInt, leagueId: leagueIdInt },
-      include: [
-        { model: Team, as: 'homeTeam' },
-        { model: Team, as: 'awayTeam' },
-      ],
+      where: { id: matchId, leagueId }
     });
 
     if (!match) {
       return res.status(404).json({ error: 'Match not found' });
     }
 
-    // Fetch standings
-    const homeTeamStanding = await Standing.findByLeagueAndTeam(leagueIdInt, match.homeTeam.id);
-    const awayTeamStanding = await Standing.findByLeagueAndTeam(leagueIdInt, match.awayTeam.id);
-
-    if (!homeTeamStanding || !awayTeamStanding) {
-      return res.status(404).json({ error: 'Standings not found for one or both teams' });
-    }
-
-    // Helper function to ensure integer values
-    const ensureInteger = (value) => (isNaN(value) ? 0 : value);
-
-    // Reverse the impact of the match results
-    if (match.team1Score > match.team2Score) {
-      // Home team won
-      await homeTeamStanding.updateRecord(
-        ensureInteger(homeTeamStanding.wins - 1),
-        ensureInteger(homeTeamStanding.losses),
-        ensureInteger(homeTeamStanding.draws)
-      );
-      await homeTeamStanding.updatePoints(ensureInteger(homeTeamStanding.points - match.firstPlacePoints));
-      
-      await awayTeamStanding.updateRecord(
-        ensureInteger(awayTeamStanding.wins),
-        ensureInteger(awayTeamStanding.losses - 1),
-        ensureInteger(awayTeamStanding.draws)
-      );
-      await awayTeamStanding.updatePoints(ensureInteger(awayTeamStanding.points));
-      
-    } else if (match.team1Score < match.team2Score) {
-      // Away team won
-      await homeTeamStanding.updateRecord(
-        ensureInteger(homeTeamStanding.wins),
-        ensureInteger(homeTeamStanding.losses - 1),
-        ensureInteger(homeTeamStanding.draws)
-      );
-      await homeTeamStanding.updatePoints(ensureInteger(homeTeamStanding.points));
-      
-      await awayTeamStanding.updateRecord(
-        ensureInteger(awayTeamStanding.wins - 1),
-        ensureInteger(awayTeamStanding.losses),
-        ensureInteger(awayTeamStanding.draws)
-      );
-      await awayTeamStanding.updatePoints(ensureInteger(awayTeamStanding.points - match.firstPlacePoints));
-      
-    } else {
-      // Draw
-      await homeTeamStanding.updateRecord(
-        ensureInteger(homeTeamStanding.wins),
-        ensureInteger(homeTeamStanding.losses),
-        ensureInteger(homeTeamStanding.draws - 1)
-      );
-      await homeTeamStanding.updatePoints(ensureInteger(homeTeamStanding.points - match.drawPoints));
-      
-      await awayTeamStanding.updateRecord(
-        ensureInteger(awayTeamStanding.wins),
-        ensureInteger(awayTeamStanding.losses),
-        ensureInteger(awayTeamStanding.draws - 1)
-      );
-      await awayTeamStanding.updatePoints(ensureInteger(awayTeamStanding.points - match.drawPoints));
-    }
-
-    // Delete the match
+    await StandingsService.reverseStandings(match);
     await match.destroy();
+
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting match:', error);
