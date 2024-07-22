@@ -30,6 +30,9 @@ module.exports = (sequelize, DataTypes) => {
     password: {
       type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        len: [8, 100],
+      },
     },
     bio: {
       type: DataTypes.STRING,
@@ -61,7 +64,6 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
   });
-
 
   User.prototype.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);

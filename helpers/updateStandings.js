@@ -70,7 +70,7 @@ const reverseStandings = async (match) => {
     if (match.team1Score > match.team2Score) {
       await team1Standing.updateRecord(team1Standing.wins - 1, team1Standing.losses, team1Standing.draws);
     } else if (match.team1Score < match.team2Score) {
-      await team1Standing.updateRecord(team1Standing.wins, team1Standing.losses + 1, team1Standing.draws);
+      await team1Standing.updateRecord(team1Standing.wins, team1Standing.losses - 1, team1Standing.draws);
     } else {
       await team1Standing.updateRecord(team1Standing.wins, team1Standing.losses, team1Standing.draws - 1);
     }
@@ -82,7 +82,7 @@ const reverseStandings = async (match) => {
     if (match.team1Score < match.team2Score) {
       await team2Standing.updateRecord(team2Standing.wins - 1, team2Standing.losses, team2Standing.draws);
     } else if (match.team1Score > match.team2Score) {
-      await team2Standing.updateRecord(team2Standing.wins, team2Standing.losses + 1, team2Standing.draws);
+      await team2Standing.updateRecord(team2Standing.wins, team2Standing.losses - 1, team2Standing.draws);
     } else {
       await team2Standing.updateRecord(team2Standing.wins, team2Standing.losses, team2Standing.draws - 1);
     }

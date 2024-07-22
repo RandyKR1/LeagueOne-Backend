@@ -14,6 +14,9 @@ module.exports = (sequelize, DataTypes) => {
     password: {
       type: DataTypes.STRING,
       allowNull: true,
+      validate: {
+        len: [8, 100], // Minimum length of 8 characters, maximum length of 100 characters
+      },
       set(value) {
         this.setDataValue('password', bcrypt.hashSync(value, 10));
       },
