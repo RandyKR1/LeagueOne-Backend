@@ -36,13 +36,23 @@ router.get('/:username', async (req, res) => {
     const user = await User.findOne({ 
       where: { username: req.params.username },
       include: [
-        {model: Team, as: 'teams'},
-        {model: Team, as: 'administeredTeams'},
-        {model: League, as: 'administeredLeagues'},
+        {model: Team, as: 'teams',
+          include: [{ model: League, as: 'leagues' }]},
+        { model: Team, as: 'administeredTeams' },
+        { model: League, as: 'administeredLeagues' }
       ]
-     });
+    });
 
     if (user) {
+      // Collect all unique leagues the user is a part of through their teams
+      const leaguesFromTeams = user.teams.flatMap(team => team.leagues || []);
+      // Remove duplicates by creating a Set with league IDs
+      const uniqueLeagues = Array.from(new Set(leaguesFromTeams.map(league => league.id)))
+        .map(id => leaguesFromTeams.find(league => league.id === id));
+
+      // Add unique leagues to the user object
+      user.dataValues.uniqueLeagues = uniqueLeagues;
+
       res.status(200).json(user);
     } else {
       res.status(404).json({ error: 'User not found' });
@@ -51,6 +61,7 @@ router.get('/:username', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+
 
 /**
  * @route PUT /users/:username

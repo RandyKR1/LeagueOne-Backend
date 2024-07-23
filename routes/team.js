@@ -19,7 +19,8 @@ router.get('/', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
     const teams = await Team.findAll({
       include: [
-        { model: User, as: 'admin', attributes: ['firstName', 'lastName', 'username'] },
+        { model: User, as: 'players', attributes: ['id', 'firstName', 'lastName', 'username']  }, 
+        { model: User, as: 'admin', attributes: ['id', 'firstName', 'lastName', 'username']  },
       ]});
     res.status(200).json(teams);
   } catch (error) {
@@ -38,8 +39,8 @@ router.get('/:id', authenticateJWT, ensureLoggedIn, async (req, res) => {
   try {
     const team = await Team.findByPk(teamId, {
       include: [
-        { model: User, as: 'players' }, 
-        { model: User, as: 'admin' },   
+        { model: User, as: 'players', attributes: ['id', 'firstName', 'lastName', 'username']  }, 
+        { model: User, as: 'admin', attributes: ['id', 'firstName', 'lastName', 'username']  },   
         { model: League, as: 'leagues', attributes: ['id', 'name'] }
       ],
     });
@@ -140,6 +141,42 @@ router.post('/:id/join', authenticateJWT, ensureLoggedIn, async (req, res) => {
 
 
 /**
+ * @route POST /teams/:id/leave
+ * @description Leave a team
+ * @access Private
+ */
+router.post('/:id/leave', authenticateJWT, ensureLoggedIn, async (req, res) => {
+  const teamId = req.params.id;
+  const userId = req.user.id; // Get the ID of the logged-in user
+
+  try {
+      const team = await Team.findByPk(teamId);
+      if (!team) {
+          return res.status(404).json({ error: 'Team not found' });
+      }
+
+      // Check if user is a player in the team
+      const isPlayer = await team.hasPlayer(userId);
+      if (!isPlayer) {
+          return res.status(400).json({ error: 'User is not a member of the team' });
+      }
+
+      // Remove user from the team
+      await TeamPlayers.destroy({ where: { teamId, userId } });
+
+      // Fetch the updated team data
+      const updatedTeam = await Team.findByPk(teamId, {
+          include: [{ model: User, as: 'players' }]
+      });
+
+      res.json({ message: 'Left the team successfully', team: updatedTeam });
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
+});
+
+
+/**
  * @route PUT /teams/:id
  * @description Update a team
  * @access Private
@@ -177,6 +214,43 @@ router.delete('/:id', authenticateJWT, ensureLoggedIn, isTeamAdmin, async (req, 
     res.status(400).json({ error: error.message });
   }
 });
+
+/**
+ * @route DELETE /teams/:teamId/players/:userId
+ * @description Remove a player from a team (admin only)
+ * @access Private
+ */
+router.delete('/:teamId/players/:userId', authenticateJWT, ensureLoggedIn, isTeamAdmin, async (req, res) => {
+    const { teamId, userId } = req.params;
+
+    try {
+        const team = await Team.findByPk(teamId, {
+            include: [
+                { model: User, as: 'players', where: { id: userId } } // Check if the user is a player
+            ]
+        });
+
+        if (!team) {
+            return res.status(404).json({ error: 'Team not found' });
+        }
+
+        // Check if user is a player in the team
+        if (team.players.length === 0) {
+            return res.status(400).json({ error: 'User is not a member of the team' });
+        }
+
+        // Remove the player from the team
+        await TeamPlayers.destroy({ where: { teamId, userId } });
+
+        // Respond with success message
+        res.status(200).json({ message: 'Player removed successfully' });
+    } catch (error) {
+        console.error("Error removing player:", error);
+        res.status(500).json({ error: 'Failed to remove player' });
+    }
+});
+
+
 
 /**
  * @route GET /teams/:teamId/matches

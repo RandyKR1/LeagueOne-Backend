@@ -1,7 +1,6 @@
 const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
 
-
 module.exports = (sequelize, DataTypes) => {
   const League = sequelize.define('League', {
     id: {
@@ -17,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
       validate: {
-        len: [8, 100], // Minimum length of 8 characters, maximum length of 100 characters
+        len: [8, 100],
       },
       set(value) {
         this.setDataValue('password', bcrypt.hashSync(value, 10));
@@ -61,7 +60,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     tableName: 'Leagues',
   });
-
+  
   League.associate = (models) => {
     League.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId' });
     League.belongsToMany(models.Team, { through: 'TeamLeagues', as: 'teams', foreignKey: 'leagueId' });

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { League, Team, User, Match , Standing} = require('../models');
+const { League, Team, User, Match , Standing, TeamLeagues} = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isLeagueAdmin, isTeamAdminForLeagueJoin } = require('../middleware/auth');
 
@@ -162,6 +162,46 @@ router.post('/:id/join', authenticateJWT, ensureLoggedIn, isTeamAdminForLeagueJo
   }
 });
 
+/**
+ * @route POST /leagues/:id/leave
+ * @description Team admin leaves a league
+ * @access Team admins
+ */
+router.post('/:id/leave', authenticateJWT, ensureLoggedIn, async (req, res) => {
+  const leagueId = req.params.id;
+  const { teamId } = req.body;
+
+  try {
+    const league = await League.findByPk(leagueId);
+    if (!league) {
+      return res.status(404).json({ error: 'League not found' });
+    }
+
+    const team = await Team.findByPk(teamId);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    // Check if the team is a member of the league
+    const isMember = await league.hasTeam(teamId);
+    if (!isMember) {
+      return res.status(400).json({ error: 'Team is not a member of the league' });
+    }
+
+    // Remove the team from the league
+    await league.removeTeam(teamId);
+
+    // Optionally, you might want to delete standings or handle related data
+    await Standing.destroy({ where: { leagueId, teamId } });
+
+    res.json({ message: 'Team left the league successfully' });
+  } catch (error) {
+    console.error('Error leaving league:', error);
+    res.status(500).json({ error: 'Unable to leave the league due to a backend issue' });
+  }
+});
+
+
 
 /**
  * @route PUT /leagues/:id
@@ -182,6 +222,44 @@ router.put('/:id', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (req, r
     res.status(400).json({ error: error.message });
   }
 });
+
+/**
+ * @route DELETE /leagues/:id/teams/:teamId
+ * @description Remove a team from a league (Admin action)
+ * @access League admins
+ */
+router.delete('/:id/remove/:teamLeaguesId', authenticateJWT, ensureLoggedIn, isLeagueAdmin, async (req, res) => {
+  const leagueId = req.params.id;
+  const teamLeaguesId = req.params.teamLeaguesId;
+
+  try {
+    // Fetch the TeamLeagues entry to get the teamId
+    const teamLeaguesEntry = await TeamLeagues.findByPk(teamLeaguesId);
+    if (!teamLeaguesEntry) {
+      return res.status(404).json({ error: 'TeamLeagues entry not found' });
+    }
+
+    const teamId = teamLeaguesEntry.teamId;
+    const league = await League.findByPk(leagueId);
+    const team = await Team.findByPk(teamId);
+
+    if (!league || !team) {
+      return res.status(404).json({ error: 'League or Team not found' });
+    }
+
+    // Remove the team from the league using the TeamLeagues ID
+    await TeamLeagues.destroy({ where: { id: teamLeaguesId } });
+
+    // Optionally, delete related data like standings
+    await Standing.destroy({ where: { leagueId, teamId } });
+
+    res.json({ message: 'Team removed from the league successfully' });
+  } catch (error) {
+    console.error('Error removing team from league:', error);
+    res.status(500).json({ error: 'Unable to remove team due to a backend issue' });
+  }
+});
+
 
 /**
  * @route DELETE /leagues/:id

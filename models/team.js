@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
       validate: {
-        len: [8, 100], // Minimum length of 8 characters, maximum length of 100 characters
+        len: [8, 100],
       },
       set(value) {
         this.setDataValue('password', bcrypt.hashSync(value, 10));
@@ -25,14 +25,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true,
       defaultValue: 20,
-    },
-    leagueId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'Leagues',
-        key: 'id',
-      },
     },
     adminId: {
       type: DataTypes.INTEGER,
@@ -53,13 +45,11 @@ module.exports = (sequelize, DataTypes) => {
   Team.associate = (models) => {
     Team.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId' });
     Team.belongsToMany(models.User, { through: 'TeamPlayers', as: 'players', foreignKey: 'teamId' });
-    Team.belongsTo(models.League, { as: 'league', foreignKey: 'leagueId' });
-    Team.hasMany(models.Match, { as: 'matches1', foreignKey: 'team1' }); // Added
-    Team.hasMany(models.Match, { as: 'matches2', foreignKey: 'team2' }); // Added
     Team.belongsToMany(models.League, { through: 'TeamLeagues', as: 'leagues', foreignKey: 'teamId' });
+    Team.hasMany(models.Match, { as: 'matches1', foreignKey: 'team1' });
+    Team.hasMany(models.Match, { as: 'matches2', foreignKey: 'team2' });
     Team.hasMany(models.Standing, { as: 'standings', foreignKey: 'teamId' });
   };
-  
 
   Team.findAllWithFilters = async (searchFilters = {}) => {
     const where = {};
@@ -73,7 +63,7 @@ module.exports = (sequelize, DataTypes) => {
       where.leagueId = leagueId;
     }
 
-    const teams = await Team.findAll({ where });
+    const teams = await Team.findAll({ where, include: 'leagues' });
     return teams;
   };
 
