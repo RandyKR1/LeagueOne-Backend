@@ -71,7 +71,7 @@ module.exports = (sequelize, DataTypes) => {
 
   User.authenticate = async function(username, password) {
     const user = await User.findOne({ where: { username } });
-
+  
     if (user && user.validPassword(password)) {
       return {
         id: user.id,
@@ -79,13 +79,14 @@ module.exports = (sequelize, DataTypes) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        isAdmin: user.isAdmin,
+        isLeagueAdmin: user.isLeagueAdmin,
+        isTeamAdmin: user.isTeamAdmin,
       };
     }
-
+  
     throw new UnauthorizedError("Invalid username/password");
   };
-
+  
   User.associate = (models) => {
     User.hasMany(models.Team, { as: 'administeredTeams', foreignKey: 'adminId' });
     User.belongsToMany(models.Team, { through: 'TeamPlayers', as: 'teams', foreignKey: 'userId' });

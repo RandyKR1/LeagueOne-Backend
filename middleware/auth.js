@@ -15,12 +15,15 @@ function authenticateJWT(req, res, next) {
       const token = authHeader.substring(7); // Extract the token from the Authorization header
       const decoded = jwt.verify(token, JWT_SECRET); // Verify the token with your secret key
       req.user = decoded; // Set the decoded user information to req.user
-      console.log("User:", req.user)
+      console.log("User:", req.user);
+    } else {
+      // User is not authenticated
+      req.user = null;
     }
     next();
   } catch (err) {
     console.error('JWT verification error:', err.message);
-    next(err); // Handle errors or continue to next middleware
+    next(err); // Pass error to error handling middleware
   }
 }
 
@@ -31,23 +34,12 @@ function authenticateJWT(req, res, next) {
  * @param {Function} next - Express next middleware function
  */
 function ensureLoggedIn(req, res, next) {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      console.log('Authorization header missing');
-      return res.status(401).json({ error: 'Unauthorized: Missing Authorization header' });
-    }
-    const token = authHeader.split(" ")[1]; // Bearer <token>
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
-    return next();
-  } catch (err) {
-    console.log('Unauthorized: Invalid token', err);
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  if (!req.user) {
+    console.log('Unauthorized: User not authenticated');
+    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
   }
+  next();
 }
-
-
 
 /**
  * Middleware to ensure the user is a league admin
@@ -79,6 +71,9 @@ async function isLeagueAdmin(req, res, next) {
 async function isTeamAdmin(req, res, next) {
   const { user, params } = req;
   const teamId = params.teamId || params.id;
+  if (!user || !teamId) {
+    return res.status(400).json({ error: 'Bad Request: Missing user or team ID' });
+  }
   try {
     const team = await Team.findByPk(teamId);
     if (team && team.adminId === user.id) {
@@ -91,7 +86,6 @@ async function isTeamAdmin(req, res, next) {
   }
 }
 
-/**
 /**
  * Middleware to ensure the user is a team admin based on the teamId in the request body
  * @param {Object} req - Express request object
@@ -121,8 +115,6 @@ async function isTeamAdminForLeagueJoin(req, res, next) {
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
-
-
 
 module.exports = {
   authenticateJWT,

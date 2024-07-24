@@ -38,7 +38,7 @@ router.post('/token', async (req, res, next) => {
 
     // Find the user by username
     const user = await User.findOne({ where: { username } });
-    console.log("/token:",username)
+    console.log("/token:", username);
     if (!user) {
       throw new UnauthorizedError('Invalid username/password');
     }

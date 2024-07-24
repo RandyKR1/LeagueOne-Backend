@@ -33,6 +33,20 @@ app.use('/auth', authRoutes); // Mount auth routes under /auth endpoint
 app.use(function (req, res, next) {
     return next(new NotFoundError());
   });
+
+
+  /** Custom error handlers for specific errors */
+app.use((err, req, res, next) => {
+  if (err instanceof BadRequestError) {
+    return res.status(400).json({ error: { message: err.message, status: err.status } });
+  }
+  if (err instanceof UnauthorizedError) {
+    return res.status(401).json({ error: { message: err.message, status: err.status } });
+  }
+  // Add handlers for other specific errors if needed
+  next(err); // Forward to generic error handler
+});
+
   
   /** Generic error handler; anything unhandled goes here. */
 app.use(function (err, req, res, next) {
