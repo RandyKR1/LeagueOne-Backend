@@ -131,34 +131,4 @@ describe('Team Routes', () => {
     expect(response.body.message).toBe('Left the team successfully');
   });
 
-  // test('PUT /teams/:id should update a team', async () => {
-  //   const teamId = 1; // Assuming ID of the test team is 1
-  //   const response = await request(app)
-  //     .put(`/teams/${teamId}`)
-  //     .set('Authorization', `Bearer ${adminToken}`)
-  //     .send({ name: 'Updated Team Name' });
-
-  //   expect(response.status).toBe(200);
-  //   expect(response.body).toHaveProperty('name', 'Updated Team Name');
-  // });
-
-  // test('DELETE /teams/:id should delete a team', async () => {
-  //   const teamId = 1; // Assuming ID of the test team is 1
-  //   const response = await request(app)
-  //     .delete(`/teams/${teamId}`)
-  //     .set('Authorization', `Bearer ${adminToken}`);
-
-  //   expect(response.status).toBe(204);
-  // });
-
-  // test('DELETE /teams/:teamId/players/:userId should remove a player from a team', async () => {
-  //   const teamId = 1; // Assuming ID of the test team is 1
-  //   const userId = 1; // Assuming ID of the test user is 1
-  //   const response = await request(app)
-  //     .delete(`/teams/${teamId}/players/${userId}`)
-  //     .set('Authorization', `Bearer ${adminToken}`);
-
-  //   expect(response.status).toBe(200);
-  //   expect(response.body.message).toBe('Player removed successfully');
-  // });
 });

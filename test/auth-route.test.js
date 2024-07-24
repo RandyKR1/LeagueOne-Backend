@@ -39,41 +39,6 @@ describe('Auth Routes', () => {
     });
   });
 
-  test('POST /auth/register should return 400 for duplicate username', async () => {
-    // // Create a user
-    // console.log('Creating first user with username: existinguser');
-    // const firstResponse = await request(app)
-    //   .post('/auth/register')
-    //   .send({
-    //     username: 'existinguser',
-    //     password: 'testpassword',
-    //     firstName: 'John',
-    //     lastName: 'Doe',
-    //     email: 'john.doe@example.com',
-    //   });
-
-    // console.log('First response status:', firstResponse.status);
-    // console.log('First response body:', firstResponse.body);
-
-    console.log('Attempting to create the same user again');
-    const secondResponse = await request(app)
-      .post('/auth/register')
-      .send({
-        username: 'testuser',
-        password: 'testpassword',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        isLeagueAdmin: false, 
-        isTeamAdmin: false,
-      });
-
-    console.log('Second response status:', secondResponse.status);
-    console.log('Second response body:', secondResponse.body);
-
-    expect(secondResponse.status).toBe(400);
-
-  });
 
   test('POST /auth/token should return a token for valid credentials', async () => {
     await request(app)

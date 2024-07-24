@@ -85,24 +85,6 @@ describe('User Routes', () => {
     expect(response.body.uniqueLeagues).toBeInstanceOf(Array);
   });
 
-  // test('PUT /users/:username should update a user by username', async () => {
-  //   const response = await request(app)
-  //     .put('/users/admin')
-  //     .set('Authorization', `Bearer ${adminToken}`)
-  //     .send({ firstName: 'Updated' });
-
-  //   expect(response.status).toBe(200);
-  //   expect(response.body).toHaveProperty('firstName', 'Updated');
-  // });
-
-  // test('DELETE /users/:username should delete a user by username', async () => {
-  //   const response = await request(app)
-  //     .delete('/users/admin')
-  //     .set('Authorization', `Bearer ${adminToken}`);
-
-  //   expect(response.status).toBe(204);
-  // });
-
   test('GET /users/:username should return 404 for non-existent user', async () => {
     const response = await request(app)
       .get('/users/nonexistent')
@@ -112,15 +94,6 @@ describe('User Routes', () => {
     expect(response.body).toHaveProperty('error', 'User not found');
   });
 
-  // test('PUT /users/:username should return 404 for non-existent user', async () => {
-  //   const response = await request(app)
-  //     .put('/users/nonexistent')
-  //     .set('Authorization', `Bearer ${adminToken}`)
-  //     .send({ firstName: 'Update' });
-
-  //   expect(response.status).toBe(404);
-  //   expect(response.body).toHaveProperty('error', 'User not found');
-  // });
 
   test('DELETE /users/:username should return 404 for non-existent user', async () => {
     const response = await request(app)

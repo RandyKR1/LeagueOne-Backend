@@ -101,37 +101,6 @@ describe('Match Routes', () => {
     expect(response.body).toHaveProperty('eventLocation', 'Stadium A');
   });
 
-  // test('POST /leagues/:leagueId/matches/create should create a new match', async () => {
-  //   const response = await request(app)
-  //     .post('/leagues/1/matches/create')
-  //     .set('Authorization', `Bearer ${adminToken}`)
-  //     .send({
-  //       eventLocation: 'Stadium B',
-  //       eventType: 'League',
-  //       team1: 1,
-  //       team2: 2,
-  //       team1Score: 3,
-  //       team2Score: 2
-  //     });
-
-  //   expect(response.status).toBe(201);
-  //   expect(response.body).toHaveProperty('eventLocation', 'Stadium B');
-  // });
-
-  // test('PUT /leagues/:leagueId/matches/:matchId should update a match', async () => {
-  //   const response = await request(app)
-  //     .put('/leagues/1/matches/1')
-  //     .set('Authorization', `Bearer ${adminToken}`)
-  //     .send({
-  //       eventLocation: 'Stadium C',
-  //       team1Score: 4,
-  //       team2Score: 3
-  //     });
-
-  //   expect(response.status).toBe(200);
-  //   expect(response.body).toHaveProperty('eventLocation', 'Stadium C');
-  // });
-
   test('DELETE /leagues/:leagueId/matches/:matchId should delete a match', async () => {
     const response = await request(app)
       .delete('/leagues/1/matches/1')
