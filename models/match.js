@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
     leagueId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      onDelete: 'CASCADE',
     },
     eventType: {
       type: DataTypes.ENUM('Friendly', 'League', 'Tournament', 'Final'),
@@ -23,7 +24,8 @@ module.exports = (sequelize, DataTypes) => {
       references: {
         model: 'Teams', // Adjust based on your actual model name
         key: 'id',
-      }
+      },
+      onDelete: 'SET NULL',
     },
     team2: {
       type: DataTypes.INTEGER,
@@ -31,7 +33,8 @@ module.exports = (sequelize, DataTypes) => {
       references: {
         model: 'Teams', // Adjust based on your actual model name
         key: 'id'
-      }
+      },
+      onDelete: 'SET NULL',
     },
     team1Score: {
       type: DataTypes.INTEGER,

@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         model: 'Teams',
         key: 'id',
       },
+      onDelete: 'CASCADE',
     },
     points: {
       type: DataTypes.INTEGER,
@@ -42,8 +43,8 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Standing.associate = (models) => {
-    Standing.belongsTo(models.League, { as: 'league', foreignKey: 'leagueId', onDelete: 'CASCADE', });
-    Standing.belongsTo(models.Team, { as: 'team', foreignKey: 'teamId', onDelete: 'CASCADE', });
+    Standing.belongsTo(models.League, { as: 'league', foreignKey: 'leagueId' });
+    Standing.belongsTo(models.Team, { as: 'team', foreignKey: 'teamId' });
   };
 
   Standing.findByLeagueAndTeam = async function(leagueId, teamId) {
