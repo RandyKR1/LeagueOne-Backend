@@ -44,12 +44,12 @@ module.exports = (sequelize, DataTypes) => {
   };
 
   Team.associate = (models) => {
-    Team.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId' });
-    Team.belongsToMany(models.User, { through: 'TeamPlayers', as: 'players', foreignKey: 'teamId' });
-    Team.belongsToMany(models.League, { through: 'TeamLeagues', as: 'leagues', foreignKey: 'teamId' });
-    Team.hasMany(models.Match, { as: 'matches1', foreignKey: 'team1' });
-    Team.hasMany(models.Match, { as: 'matches2', foreignKey: 'team2' });
-    Team.hasMany(models.Standing, { as: 'standings', foreignKey: 'teamId' });
+    Team.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId', onDelete: 'SET  NULL' });
+    Team.belongsToMany(models.User, { through: 'TeamPlayers', as: 'players', foreignKey:  'teamId', onDelete: 'CASCADE' });
+    Team.belongsToMany(models.League, { through: 'TeamLeagues', as: 'leagues',  foreignKey: 'teamId', onDelete: 'CASCADE' });
+    Team.hasMany(models.Match, { as: 'matches1', foreignKey: 'team1', onDelete: 'SET  NULL' });
+    Team.hasMany(models.Match, { as: 'matches2', foreignKey: 'team2', onDelete: 'SET  NULL' });
+    Team.hasMany(models.Standing, { as: 'standings', foreignKey: 'teamId', onDelete:  'CASCADE' });
   };
 
   Team.findAllWithFilters = async (searchFilters = {}) => {

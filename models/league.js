@@ -60,12 +60,12 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     tableName: 'Leagues',
   });
-  
+
   League.associate = (models) => {
-    League.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId' });
-    League.belongsToMany(models.Team, { through: 'TeamLeagues', as: 'teams', foreignKey: 'leagueId' });
-    League.hasMany(models.Match, { as: 'matches', foreignKey: 'leagueId' });
-    League.hasMany(models.Standing, { as: 'standings', foreignKey: 'leagueId' });
+    League.belongsTo(models.User, { as: 'admin', foreignKey: 'adminId', onDelete:   'CASCADE' });
+    League.belongsToMany(models.Team, { through: 'TeamLeagues', as: 'teams', foreignKey:  'leagueId', onDelete: 'CASCADE' });
+    League.hasMany(models.Match, { as: 'matches', foreignKey: 'leagueId', onDelete:   'CASCADE' });
+    League.hasMany(models.Standing, { as: 'standings', foreignKey: 'leagueId', onDelete:  'CASCADE' });
   };
 
   League.prototype.getSortedStandings = async function() {

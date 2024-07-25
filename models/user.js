@@ -88,10 +88,11 @@ module.exports = (sequelize, DataTypes) => {
   };
   
   User.associate = (models) => {
-    User.hasMany(models.Team, { as: 'administeredTeams', foreignKey: 'adminId' });
-    User.belongsToMany(models.Team, { through: 'TeamPlayers', as: 'teams', foreignKey: 'userId' });
-    User.hasMany(models.League, { as: 'administeredLeagues', foreignKey: 'adminId' });
+    User.hasMany(models.Team, { as: 'administeredTeams', foreignKey: 'adminId', onDelete:   'CASCADE' });
+    User.belongsToMany(models.Team, { through: 'TeamPlayers', as: 'teams', foreignKey:  'userId', onDelete: 'CASCADE' });
+    User.hasMany(models.League, { as: 'administeredLeagues', foreignKey: 'adminId',   onDelete: 'CASCADE' });
   };
+  
 
   User.findAllWithFilters = async (searchFilters = {}) => {
     const where = {};

@@ -10,18 +10,18 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       references: {
         model: 'Users',
-        key: 'id'
+        key: 'id',
       },
-      unique: 'unique_user_team', // Unique constraint name
+      onDelete: 'CASCADE',
     },
     teamId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'Teams',
-        key: 'id'
+        key: 'id',
       },
-      unique: 'unique_user_team', // Unique constraint name
+      onDelete: 'CASCADE',
     },
   }, {
     tableName: 'TeamPlayers',
