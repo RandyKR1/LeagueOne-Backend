@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
-const { Team, Match, User, TeamPlayers, League } = require('../models');
+const { Team, Standing, Match, User, TeamPlayers, League, sequelize } = require('../models');
 const { validateSchema } = require('../middleware/validateSchema');
 const { authenticateJWT, ensureLoggedIn, isTeamAdmin } = require('../middleware/auth');
 
@@ -196,21 +196,25 @@ router.put('/:id', authenticateJWT, ensureLoggedIn, isTeamAdmin, async (req, res
   }
 });
 
-/**
- * @route DELETE /teams/:id
- * @description Delete a team
- * @access Private
- */
 router.delete('/:id', authenticateJWT, ensureLoggedIn, isTeamAdmin, async (req, res) => {
+  const teamId = req.params.id;
+  const transaction = await sequelize.transaction();
+  
   try {
-    const team = await Team.findByPk(req.params.id);
+    const team = await Team.findByPk(teamId, { transaction });
     if (!team) {
+      await transaction.rollback();
       return res.status(404).json({ error: 'Team not found' });
     }
 
-    await team.destroy();
+    await Standing.destroy({ where: { teamId }, transaction });
+    await team.destroy({ transaction });
+
+    await transaction.commit();
     res.status(204).send();
   } catch (error) {
+    await transaction.rollback();
+    console.error('Error deleting team:', error.message);
     res.status(400).json({ error: error.message });
   }
 });
