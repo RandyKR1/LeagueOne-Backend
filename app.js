@@ -4,12 +4,8 @@ const cors = require('cors');
 const { NotFoundError } = require("./expressError");
 require('dotenv').config();
 
-const cors = require('cors');
-app.use(cors({
-  origin: 'https://leagueone.onrender.com', // Adjust as needed
-  optionsSuccessStatus: 200
-}));
-
+// Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
