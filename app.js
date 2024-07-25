@@ -3,9 +3,7 @@ const app = express();
 const cors = require('cors');
 const { NotFoundError } = require("./expressError");
 require('dotenv').config();
-// const { authenticateToken } = require('./utilities/auth'); // Import authenticate middleware from utilities/auth.js
 
-// Middleware
 const cors = require('cors');
 app.use(cors({
   origin: 'https://leagueone.onrender.com', // Adjust as needed
@@ -14,9 +12,6 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Authentication middleware
-// app.use(authenticateToken);
 
 // Routes
 const userRoutes = require('./routes/user');
