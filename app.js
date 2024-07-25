@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const { NotFoundError } = require("./expressError");
+const { NotFoundError, BadRequestError, UnauthorizedError } = require("./expressError");
 require('dotenv').config();
 
 // Middleware
@@ -23,8 +23,6 @@ app.use('/leagues/:leagueId/matches', matchRoutes);
 app.use('/auth', authRoutes); // Mount auth routes under /auth endpoint
 
         
-
-
 /** Handle 404 errors -- this matches everything */
 app.use(function (req, res, next) {
     return next(new NotFoundError());
