@@ -1,4 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
+  // Define the Match model
   const Match = sequelize.define('Match', {
     id: {
       type: DataTypes.INTEGER,
@@ -22,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Teams', // Adjust based on your actual model name
+        model: 'Teams',  // Reference to the Teams model
         key: 'id',
       },
       onDelete: 'SET NULL',
@@ -31,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Teams', // Adjust based on your actual model name
+        model: 'Teams',  // Reference to the Teams model
         key: 'id'
       },
       onDelete: 'SET NULL',
@@ -45,15 +46,15 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
   }, {
-    tableName: 'Matches'
+    tableName: 'Matches'  // Specify the table name
   });
 
+  // Define associations
   Match.associate = (models) => {
     Match.belongsTo(models.League, { as: 'league', foreignKey: 'leagueId' });
     Match.belongsTo(models.Team, { as: 'homeTeam', foreignKey: 'team1' });
     Match.belongsTo(models.Team, { as: 'awayTeam', foreignKey: 'team2' });
   };
-
 
   return Match;
 };
